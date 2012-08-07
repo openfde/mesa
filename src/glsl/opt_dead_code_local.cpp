@@ -265,10 +265,20 @@ process_assignment(void *ctx, ir_assignment *ir, exec_list *assignments)
       }
    }
 
+   if (ir->lhs->as_dereference_variable() == NULL) {
+      /* HACK: Chrome has encountered bugs when this optimization processes
+       * array elements in the lhs. For example:
+       *   vec4 tmp; tmp[3] = 1.0;
+       * is incorrectly recorded as writing to only the (x) element, and will
+       * be killed if a later statement replaces (x). To sidestep this problem
+       * temporarily, trim only assignments to bare variables.
+       */
+      return progress;
+   }
+
    /* Add this instruction to the assignment list available to be removed. */
    assignment_entry *entry = new(ctx) assignment_entry(var, ir);
    assignments->push_tail(entry);
-
    if (debug) {
       printf("add %s\n", var->name);
 
