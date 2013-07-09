@@ -483,6 +483,7 @@ private:
           */
          this->next_sampler +=
                MAX2(1, uniform->array_elements);
+         this->next_sampler = MIN2(this->next_sampler, MAX_SAMPLERS);
 
          const gl_texture_index target = base_type->sampler_index();
          const unsigned shadow = base_type->sampler_shadow;
