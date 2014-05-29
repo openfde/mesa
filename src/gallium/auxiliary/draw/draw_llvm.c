@@ -422,7 +422,7 @@ create_jit_vertex_header(struct gallivm_state *gallivm, int data_elems)
 static void
 create_jit_types(struct draw_llvm_variant *variant)
 {
-   struct gallivm_state *gallivm = variant->gallivm;
+   struct gallivm_state *gallivm = variant->llvm_item->gallivm;
    LLVMTypeRef texture_type, sampler_type, context_type, buffer_type,
       vb_type;
 
@@ -530,6 +530,48 @@ draw_llvm_destroy(struct draw_llvm *llvm)
 }
 
 
+static struct llvm_cache_item *
+llvm_cache_item_create(struct draw_llvm_variant *variant, unsigned num_inputs)
+{
+   struct llvm_cache_item *item;
+   LLVMTypeRef vertex_header;
+   char module_name[64];
+   struct draw_llvm *llvm = variant->llvm; 
+
+   item = MALLOC(sizeof *item);
+   if (item == NULL)
+      return NULL;
+
+   variant->llvm_item = item;
+
+   util_snprintf(module_name, sizeof(module_name), "draw_llvm_vs_variant%u",
+                 variant->shader->variants_cached);
+
+   item->gallivm = gallivm_create(module_name, llvm->context);
+
+   create_jit_types(variant);
+
+   vertex_header = create_jit_vertex_header(item->gallivm, num_inputs);
+
+   variant->vertex_header_ptr_type = LLVMPointerType(vertex_header, 0);
+
+   draw_llvm_generate(variant->llvm, variant, FALSE);  /* linear */
+   draw_llvm_generate(variant->llvm, variant, TRUE);   /* elts */
+
+   gallivm_compile_module(item->gallivm);
+
+   item->jit_func = (draw_jit_vert_func)
+	 gallivm_jit_function(item->gallivm, variant->function);
+
+   item->jit_func_elts = (draw_jit_vert_func_elts)
+	 gallivm_jit_function(item->gallivm, variant->function_elts);
+
+   gallivm_free_ir(variant->llvm_item->gallivm);
+
+   return item;
+}
+
+
 /**
  * Create LLVM-generated code for a vertex shader.
  */
@@ -541,8 +583,6 @@ draw_llvm_create_variant(struct draw_llvm *llvm,
    struct draw_llvm_variant *variant;
    struct llvm_vertex_shader *shader =
       llvm_vertex_shader(llvm->draw->vs.vertex_shader);
-   LLVMTypeRef vertex_header;
-   char module_name[64];
 
    variant = MALLOC(sizeof *variant +
                     shader->variant_key_size -
@@ -553,36 +593,17 @@ draw_llvm_create_variant(struct draw_llvm *llvm,
    variant->llvm = llvm;
    variant->shader = shader;
 
-   util_snprintf(module_name, sizeof(module_name), "draw_llvm_vs_variant%u",
-                 variant->shader->variants_cached);
-
-   variant->gallivm = gallivm_create(module_name, llvm->context);
-
-   create_jit_types(variant);
-
    memcpy(&variant->key, key, shader->variant_key_size);
 
-   vertex_header = create_jit_vertex_header(variant->gallivm, num_inputs);
-
-   variant->vertex_header_ptr_type = LLVMPointerType(vertex_header, 0);
-
-   draw_llvm_generate(llvm, variant, FALSE);  /* linear */
-   draw_llvm_generate(llvm, variant, TRUE);   /* elts */
-
-   gallivm_compile_module(variant->gallivm);
-
-   variant->jit_func = (draw_jit_vert_func)
-         gallivm_jit_function(variant->gallivm, variant->function);
-
-   variant->jit_func_elts = (draw_jit_vert_func_elts)
-         gallivm_jit_function(variant->gallivm, variant->function_elts);
-
-   gallivm_free_ir(variant->gallivm);
+   variant->llvm_item = llvm_cache_item_create(variant, num_inputs);
+   if (variant->llvm_item == NULL) {
+      FREE(variant);
+      return NULL;
+   }
 
    variant->list_item_global.base = variant;
    variant->list_item_local.base = variant;
    /*variant->no = */shader->variants_created++;
-   variant->list_item_global.base = variant;
 
    return variant;
 }
@@ -602,16 +623,16 @@ generate_vs(struct draw_llvm_variant *variant,
    struct draw_llvm *llvm = variant->llvm;
    const struct tgsi_token *tokens = llvm->draw->vs.vertex_shader->state.tokens;
    LLVMValueRef consts_ptr =
-      draw_jit_context_vs_constants(variant->gallivm, context_ptr);
+      draw_jit_context_vs_constants(variant->llvm_item->gallivm, context_ptr);
    LLVMValueRef num_consts_ptr =
-      draw_jit_context_num_vs_constants(variant->gallivm, context_ptr);
+      draw_jit_context_num_vs_constants(variant->llvm_item->gallivm, context_ptr);
 
    if (gallivm_debug & (GALLIVM_DEBUG_TGSI | GALLIVM_DEBUG_IR)) {
       tgsi_dump(tokens, 0);
       draw_llvm_dump_variant_key(&variant->key);
    }
 
-   lp_build_tgsi_soa(variant->gallivm,
+   lp_build_tgsi_soa(variant->llvm_item->gallivm,
                      tokens,
                      vs_type,
                      NULL /*struct lp_build_mask_context *mask*/,
@@ -629,7 +650,7 @@ generate_vs(struct draw_llvm_variant *variant,
       unsigned chan, attrib;
       struct lp_build_context bld;
       struct tgsi_shader_info* info = &llvm->draw->vs.vertex_shader->info;
-      lp_build_context_init(&bld, variant->gallivm, vs_type);
+      lp_build_context_init(&bld, variant->llvm_item->gallivm, vs_type);
 
       for (attrib = 0; attrib < info->num_outputs; ++attrib) {
          for (chan = 0; chan < TGSI_NUM_CHANNELS; ++chan) {
@@ -1075,7 +1096,7 @@ generate_viewport(struct draw_llvm_variant *variant,
                   LLVMValueRef context_ptr)
 {
    int i;
-   struct gallivm_state *gallivm = variant->gallivm;
+   struct gallivm_state *gallivm = variant->llvm_item->gallivm;
    struct lp_type f32_type = vs_type;
    const unsigned pos = variant->llvm->draw->vs.position_output;
    LLVMTypeRef vs_type_llvm = lp_build_vec_type(gallivm, vs_type);
@@ -1489,7 +1510,7 @@ static void
 draw_llvm_generate(struct draw_llvm *llvm, struct draw_llvm_variant *variant,
                    boolean elts)
 {
-   struct gallivm_state *gallivm = variant->gallivm;
+   struct gallivm_state *gallivm = variant->llvm_item->gallivm;
    LLVMContextRef context = gallivm->context;
    LLVMTypeRef int32_type = LLVMInt32TypeInContext(context);
    LLVMTypeRef arg_types[11];
@@ -1987,18 +2008,23 @@ draw_llvm_set_sampler_state(struct draw_context *draw,
    }
 }
 
+static void
+llvm_cache_item_destroy(struct llvm_cache_item *item)
+{
+   gallivm_destroy(item->gallivm);
+   FREE(item->gallivm);
+   FREE(item);
+}
 
 void
 draw_llvm_destroy_variant(struct draw_llvm_variant *variant)
 {
-   struct draw_llvm *llvm = variant->llvm;
-
-   gallivm_destroy(variant->gallivm);
+   llvm_cache_item_destroy(variant->llvm_item);
 
    remove_from_list(&variant->list_item_local);
    variant->shader->variants_cached--;
    remove_from_list(&variant->list_item_global);
-   llvm->nr_variants--;
+   variant->llvm->nr_variants--;
    FREE(variant);
 }
 
