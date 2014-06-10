@@ -1542,7 +1542,7 @@ fs_generator::generate_code(const cfg_t *cfg, int dispatch_width)
    memset(&annotation, 0, sizeof(annotation));
 
    foreach_block_and_inst (block, fs_inst, inst, cfg) {
-      struct brw_reg src[3], dst;
+      struct brw_reg src[3] = {}, dst;
       unsigned int last_insn_offset = p->next_insn_offset;
 
       if (unlikely(debug_flag))
