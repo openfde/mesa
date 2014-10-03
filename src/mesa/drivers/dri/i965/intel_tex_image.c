@@ -384,24 +384,6 @@ intel_image_target_texture_2d(struct gl_context *ctx, GLenum target,
    if (image == NULL)
       return;
 
-   /**
-    * Images originating via EGL_EXT_image_dma_buf_import can be used only
-    * with GL_OES_EGL_image_external only.
-    */
-   if (image->dma_buf_imported && target != GL_TEXTURE_EXTERNAL_OES) {
-      _mesa_error(ctx, GL_INVALID_OPERATION,
-            "glEGLImageTargetTexture2DOES(dma buffers can be used with "
-               "GL_OES_EGL_image_external only");
-      return;
-   }
-
-   if (target == GL_TEXTURE_EXTERNAL_OES && !image->dma_buf_imported) {
-      _mesa_error(ctx, GL_INVALID_OPERATION,
-            "glEGLImageTargetTexture2DOES(external target is enabled only "
-               "for images created with EGL_EXT_image_dma_buf_import");
-      return;
-   }
-
    /* Disallow depth/stencil textures: we don't have a way to pass the
     * separate stencil miptree of a GL_DEPTH_STENCIL texture through.
     */

@@ -89,14 +89,7 @@ struct __DRIimageRec {
    GLuint tile_y;
    bool has_depthstencil;
 
-   /**
-    * Provided by EGL_EXT_image_dma_buf_import.
-    *
-    * The flag is set in order to restrict the use of the image later on.
-    *
-    * See intel_image_target_texture_2d()
-    */
-   bool dma_buf_imported;
+   /* Provided by EGL_EXT_image_dma_buf_import */
    enum __DRIYUVColorSpace yuv_color_space;
    enum __DRISampleRange sample_range;
    enum __DRIChromaSiting horizontal_siting;
