@@ -1,4 +1,4 @@
-# Copyright © 2013 Intel Corporation
+# Copyright © 2012 Jon TURNEY
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -19,24 +19,46 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-SUBDIRS = glapi/gen
+SUBDIRS = . tests
+
+TOP = $(top_srcdir)
+include Makefile.sources
+include ../Makefile.sources
+
+AM_CPPFLAGS = \
+        $(DEFINES) \
+        $(SELINUX_CFLAGS) \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/src/mapi \
+        -I$(top_builddir)/src/mapi \
+	-I$(top_srcdir)/src/mesa
+
+if HAVE_X86_ASM
+if HAVE_X86_64_ASM
+GLAPI_ASM_SOURCES = $(X86_64_API)
+else
+GLAPI_ASM_SOURCES = $(X86_API)
+endif
+endif
+if HAVE_SPARC_ASM
+GLAPI_ASM_SOURCES = $(SPARC_API)
+endif
 
 if HAVE_SHARED_GLAPI
-SUBDIRS += shared-glapi
+AM_CPPFLAGS += \
+	-DMAPI_MODE_BRIDGE \
+	-DMAPI_ABI_HEADER=\"glapi/glapi_mapi_tmp.h\"
+glapi_GLAPI_sources = $(GLAPI_UTIL_SOURCES)
+glapi_ASM_sources =
+glapi_MAPI_sources = $(MAPI_BRIDGE_FILES)
+else
+AM_CPPFLAGS += \
+	-DMAPI_MODE_UTIL
+glapi_GLAPI_sources = $(GLAPI_SOURCES) $(GLAPI_UTIL_SOURCES)
+glapi_ASM_sources = $(GLAPI_ASM_SOURCES)
+glapi_MAPI_sources = $(MAPI_UTIL_FILES)
 endif
 
-if HAVE_OPENGL
-SUBDIRS += glapi
-endif
+noinst_LTLIBRARIES = libglapi.la
 
-if HAVE_OPENGL_ES1
-SUBDIRS += es1api
-endif
-
-if HAVE_OPENGL_ES2
-SUBDIRS += es2api
-endif
-
-if HAVE_OPENVG
-SUBDIRS += vgapi
-endif
+libglapi_la_SOURCES = $(glapi_GLAPI_sources) $(glapi_ASM_sources) $(glapi_MAPI_sources)

@@ -1,4 +1,4 @@
-# Copyright © 2013 Intel Corporation
+# Copyright © 2012 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -19,24 +19,46 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-SUBDIRS = glapi/gen
+AM_CPPFLAGS = \
+	$(DEFINES) \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/src/mapi \
+	-DMAPI_MODE_BRIDGE \
+	-DMAPI_ABI_HEADER=\"glapi_mapi_tmp.h\"
+
+AM_CFLAGS = $(VISIBILITY_CFLAGS)
+
+TESTS = ABI-check
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = glesv1_cm.pc
+
+GLES_includedir = $(includedir)/GLES
+GLES_include_HEADERS = \
+	$(top_srcdir)/include/GLES/egl.h \
+	$(top_srcdir)/include/GLES/gl.h \
+	$(top_srcdir)/include/GLES/glext.h \
+	$(top_srcdir)/include/GLES/glplatform.h
+
+lib_LTLIBRARIES = libGLESv1_CM.la
+
+libGLESv1_CM_la_SOURCES = ../entry.c glapi_mapi_tmp.h
+libGLESv1_CM_la_LIBADD = $(GLESv1_CM_LIB_DEPS)
+libGLESv1_CM_la_LDFLAGS = \
+	-no-undefined \
+	-version-number 1:1 \
+	$(GC_SECTIONS) \
+	$(LD_NO_UNDEFINED)
 
 if HAVE_SHARED_GLAPI
-SUBDIRS += shared-glapi
+libGLESv1_CM_la_LIBADD += ../shared-glapi/libglapi.la
 endif
 
-if HAVE_OPENGL
-SUBDIRS += glapi
-endif
+include ../glapi/gen/glapi_gen.mk
+glapi_mapi_tmp.h: ../glapi/gen/gl_and_es_API.xml $(glapi_gen_mapi_deps)
+	$(call glapi_gen_mapi,$<,es1api)
 
-if HAVE_OPENGL_ES1
-SUBDIRS += es1api
-endif
+BUILT_SOURCES = glapi_mapi_tmp.h
+CLEANFILES = $(BUILT_SOURCES)
 
-if HAVE_OPENGL_ES2
-SUBDIRS += es2api
-endif
-
-if HAVE_OPENVG
-SUBDIRS += vgapi
-endif
+include $(top_srcdir)/install-lib-links.mk
