@@ -65,4 +65,9 @@ libegl_dri2_la_SOURCES += platform_drm.c
 AM_CFLAGS += -DHAVE_DRM_PLATFORM
 endif
 
+if HAVE_EGL_PLATFORM_NULL
+libegl_dri2_la_SOURCES += platform_null.c
+AM_CFLAGS += -DHAVE_NULL_PLATFORM
+endif
+
 EXTRA_DIST = SConscript
