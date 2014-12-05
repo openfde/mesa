@@ -632,6 +632,13 @@ dri2_initialize(_EGLDriver *drv, _EGLDisplay *disp)
       return EGL_FALSE;
 
    switch (disp->Platform) {
+#ifdef HAVE_NULL_PLATFORM
+   case _EGL_PLATFORM_NULL:
+      if (disp->Options.TestOnly)
+         return EGL_TRUE;
+      return dri2_initialize_null(drv, disp);
+#endif
+
 #ifdef HAVE_X11_PLATFORM
    case _EGL_PLATFORM_X11:
       if (disp->Options.TestOnly)
@@ -1534,7 +1541,7 @@ dri2_create_wayland_buffer_from_image(_EGLDriver *drv, _EGLDisplay *dpy,
    return dri2_dpy->vtbl->create_wayland_buffer_from_image(drv, dpy, img);
 }
 
-#ifdef HAVE_DRM_PLATFORM
+#if defined(HAVE_DRM_PLATFORM) || defined(HAVE_NULL_PLATFORM)
 static EGLBoolean
 dri2_check_dma_buf_attribs(const _EGLImageAttribs *attrs)
 {
@@ -1792,7 +1799,7 @@ dri2_create_image_khr(_EGLDriver *drv, _EGLDisplay *disp,
    case EGL_WAYLAND_BUFFER_WL:
       return dri2_create_image_wayland_wl_buffer(disp, ctx, buffer, attr_list);
 #endif
-#ifdef HAVE_DRM_PLATFORM
+#if defined(HAVE_DRM_PLATFORM) || defined(HAVE_NULL_PLATFORM)
    case EGL_LINUX_DMA_BUF_EXT:
       return dri2_create_image_dma_buf(disp, ctx, buffer, attr_list);
 #endif

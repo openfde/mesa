@@ -332,4 +332,7 @@ dri2_initialize_wayland(_EGLDriver *drv, _EGLDisplay *disp);
 EGLBoolean
 dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *disp);
 
+EGLBoolean
+dri2_initialize_null(_EGLDriver *drv, _EGLDisplay *disp);
+
 #endif /* EGL_DRI2_INCLUDED */
