@@ -55,12 +55,16 @@ null_get_buffers_with_format(__DRIdrawable * driDrawable,
    return dri2_surf->buffers;
 }
 
+static const char* node_path_fmt_card = "/dev/dri/card%d";
+static const char* node_path_fmt_render = "/dev/dri/renderD%d";
+
 EGLBoolean
 dri2_initialize_null(_EGLDriver *drv, _EGLDisplay *disp)
 {
    struct dri2_egl_display *dri2_dpy;
    const char* err;
-   int i;
+   int i, render_node;
+   int driver_loaded = 0;
 
    loader_set_logger(_eglLog);
 
@@ -70,26 +74,35 @@ dri2_initialize_null(_EGLDriver *drv, _EGLDisplay *disp)
 
    disp->DriverData = (void *) dri2_dpy;
 
-   for (i = 0; i < 16; ++i) {
-      char *card_path;
-      if (asprintf(&card_path, "/dev/dri/card%d", i) < 0)
-         continue;
+   for (render_node = 1; render_node >= 0; --render_node) {
+      const char* node_path_fmt =
+            render_node ? node_path_fmt_render : node_path_fmt_card;
+      const int base = render_node ? 128 : 0;
+      for (i = 0; i < 16; ++i) {
+         char *card_path;
+         if (asprintf(&card_path, node_path_fmt, base + i) < 0)
+            continue;
 
-      dri2_dpy->fd = open(card_path, O_RDWR);
-      free(card_path);
-      if (dri2_dpy->fd < 0)
-         continue;
+         dri2_dpy->fd = open(card_path, O_RDWR);
+         free(card_path);
+         if (dri2_dpy->fd < 0)
+            continue;
 
-      dri2_dpy->driver_name = loader_get_driver_for_fd(dri2_dpy->fd, 0);
-      if (dri2_dpy->driver_name) {
-         if (dri2_load_driver(disp))
-            break;
-         free(dri2_dpy->driver_name);
+         dri2_dpy->driver_name = loader_get_driver_for_fd(dri2_dpy->fd, 0);
+         if (dri2_dpy->driver_name) {
+            if (dri2_load_driver(disp)) {
+               driver_loaded = 1;
+               break;
+            }
+            free(dri2_dpy->driver_name);
+         }
+         close(dri2_dpy->fd);
       }
-      close(dri2_dpy->fd);
+      if (driver_loaded)
+         break;
    }
 
-   if (i >= 16) {
+   if (!driver_loaded) {
       err = "DRI2: failed to load driver";
       goto cleanup_display;
    }
