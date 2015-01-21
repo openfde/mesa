@@ -103,8 +103,13 @@ dri2_initialize_null(_EGLDriver *drv, _EGLDisplay *disp)
    }
 
    if (!driver_loaded) {
-      err = "DRI2: failed to load driver";
-      goto cleanup_display;
+      dri2_dpy->driver_name = strdup("swrast");
+      if (!dri2_load_driver_swrast(disp))
+      {
+         err = "DRI2: failed to load driver";
+         free(dri2_dpy->driver_name);
+         goto cleanup_display;
+      }
    }
 
    dri2_dpy->dri2_loader_extension.base.name = __DRI_DRI2_LOADER;
@@ -148,7 +153,8 @@ dri2_initialize_null(_EGLDriver *drv, _EGLDisplay *disp)
 cleanup_driver:
    dlclose(dri2_dpy->driver);
    free(dri2_dpy->driver_name);
-   close(dri2_dpy->fd);
+   if (dri2_dpy->fd >= 0)
+      close(dri2_dpy->fd);
 cleanup_display:
    free(dri2_dpy);
 
