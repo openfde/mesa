@@ -310,8 +310,14 @@ dri2_initialize_surfaceless(_EGLDriver *drv, _EGLDisplay *disp)
    }
 
    if (!driver_loaded) {
-      err = "DRI2: failed to load driver";
-      goto cleanup;
+      dri2_dpy->driver_name = strdup("swrast");
+      if (!dri2_load_driver_swrast(disp))
+      {
+         err = "DRI2: failed to load driver";
+         free(dri2_dpy->driver_name);
+         dri2_dpy->driver_name = NULL;
+         goto cleanup;
+      }
    }
 
    dri2_dpy->loader_extensions = image_loader_extensions;
