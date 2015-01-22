@@ -534,7 +534,7 @@ dri2_setup_screen(_EGLDisplay *disp)
          disp->Extensions.KHR_gl_texture_2D_image = EGL_TRUE;
          disp->Extensions.KHR_gl_texture_cubemap_image = EGL_TRUE;
       }
-#ifdef HAVE_DRM_PLATFORM
+#if defined(HAVE_DRM_PLATFORM) || defined(HAVE_NULL_PLATFORM)
       if (dri2_dpy->image->base.version >= 8 &&
           dri2_dpy->image->createImageFromDmaBufs) {
          disp->Extensions.EXT_image_dma_buf_import = EGL_TRUE;
