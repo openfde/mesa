@@ -26,6 +26,17 @@
  *
  **************************************************************************/
 
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#if defined(HAVE_LIBDRM)
+#include <xf86drm.h>
+#endif
+
 #include "pipe/p_compiler.h"
 #include "pipe/p_format.h"
 #include "util/u_inlines.h"
@@ -36,13 +47,24 @@
 #include "state_tracker/sw_winsys.h"
 #include "dri_sw_winsys.h"
 
+#include "drm_driver.h"
+
+enum displaytarget_type {
+   DISPLAYTARGET_TYPE_USER,
+   DISPLAYTARGET_TYPE_PRIME,
+};
 
 struct dri_sw_displaytarget
 {
+   enum displaytarget_type type;
    enum pipe_format format;
    unsigned width;
    unsigned height;
    unsigned stride;
+
+#if defined(HAVE_LIBDRM)
+   uint32_t vgem_handle;
+#endif
 
    void *data;
    void *mapped;
@@ -53,7 +75,74 @@ struct dri_sw_winsys
    struct sw_winsys base;
 
    struct drisw_loader_funcs *lf;
+
+#if defined(HAVE_LIBDRM)
+   int vgem_fd;
+#endif
 };
+
+#if defined(HAVE_LIBDRM)
+
+const char g_sys_card_path_format[] =
+   "/sys/bus/platform/devices/vgem/drm/card%d";
+const char g_dev_card_path_format[] =
+   "/dev/dri/card%d";
+
+static int
+drm_open_vgem()
+{
+   char *name;
+   int i, fd;
+
+   for (i = 0; i < 16; i++) {
+      struct stat _stat;
+      int ret;
+      ret = asprintf(&name, g_sys_card_path_format, i);
+      assert(ret != -1);
+
+      if (stat(name, &_stat) == -1) {
+         free(name);
+         continue;
+      }
+
+      free(name);
+      ret = asprintf(&name, g_dev_card_path_format, i);
+      assert(ret != -1);
+
+      fd = open(name, O_RDWR);
+      free(name);
+      if (fd < 0)
+         continue;
+      return fd;
+   }
+   return -1;
+}
+
+static void *
+mmap_dumb_bo(int fd, int handle, size_t size)
+{
+   struct drm_mode_map_dumb mmap_arg;
+   void *ptr;
+   int ret;
+
+   memset(&mmap_arg, 0, sizeof(mmap_arg));
+
+   mmap_arg.handle = handle;
+
+   ret = drmIoctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &mmap_arg);
+   if (ret)
+      return NULL;
+
+   ptr = mmap(NULL, size, (PROT_READ|PROT_WRITE), MAP_SHARED, fd,
+         mmap_arg.offset);
+
+   if (ptr == MAP_FAILED)
+      return NULL;
+
+   return ptr;
+}
+
+#endif
 
 static INLINE struct dri_sw_displaytarget *
 dri_sw_displaytarget( struct sw_displaytarget *dt )
@@ -92,6 +181,7 @@ dri_sw_displaytarget_create(struct sw_winsys *winsys,
    if(!dri_sw_dt)
       goto no_dt;
 
+   dri_sw_dt->type = DISPLAYTARGET_TYPE_USER;
    dri_sw_dt->format = format;
    dri_sw_dt->width = width;
    dri_sw_dt->height = height;
@@ -115,25 +205,30 @@ no_dt:
    return NULL;
 }
 
-static void
-dri_sw_displaytarget_destroy(struct sw_winsys *ws,
-                             struct sw_displaytarget *dt)
-{
-   struct dri_sw_displaytarget *dri_sw_dt = dri_sw_displaytarget(dt);
-
-   FREE(dri_sw_dt->data);
-
-   FREE(dri_sw_dt);
-}
-
 static void *
 dri_sw_displaytarget_map(struct sw_winsys *ws,
                          struct sw_displaytarget *dt,
                          unsigned flags)
 {
+   struct dri_sw_winsys *dri_sw_ws = dri_sw_winsys(ws);
    struct dri_sw_displaytarget *dri_sw_dt = dri_sw_displaytarget(dt);
-   dri_sw_dt->mapped = dri_sw_dt->data;
-   return dri_sw_dt->mapped;
+   if (dri_sw_dt->type == DISPLAYTARGET_TYPE_USER)
+      return dri_sw_dt->data;
+
+#if defined(HAVE_LIBDRM)
+   if (dri_sw_dt->type == DISPLAYTARGET_TYPE_PRIME && dri_sw_ws->vgem_fd >= 0) {
+
+      if (dri_sw_dt->mapped)
+         return dri_sw_dt->mapped;
+
+      dri_sw_dt->mapped = mmap_dumb_bo(dri_sw_ws->vgem_fd,
+                                       dri_sw_dt->vgem_handle,
+                                       dri_sw_dt->height * dri_sw_dt->stride);
+      return dri_sw_dt->mapped;
+   }
+#endif
+
+   return NULL;
 }
 
 static void
@@ -141,25 +236,112 @@ dri_sw_displaytarget_unmap(struct sw_winsys *ws,
                            struct sw_displaytarget *dt)
 {
    struct dri_sw_displaytarget *dri_sw_dt = dri_sw_displaytarget(dt);
+
+#if defined(HAVE_LIBDRM)
+   if (dri_sw_dt->mapped)
+      munmap(dri_sw_dt->mapped, dri_sw_dt->height * dri_sw_dt->stride);
+#endif
+
    dri_sw_dt->mapped = NULL;
 }
 
+static void
+dri_sw_displaytarget_destroy(struct sw_winsys *ws,
+                             struct sw_displaytarget *dt)
+{
+   struct dri_sw_winsys *dri_sw_ws = dri_sw_winsys(ws);
+   struct dri_sw_displaytarget *dri_sw_dt = dri_sw_displaytarget(dt);
+
+   if (dri_sw_dt->mapped) {
+      dri_sw_displaytarget_unmap(ws, dt);
+   }
+
+#if defined(HAVE_LIBDRM)
+   if (dri_sw_dt->type == DISPLAYTARGET_TYPE_PRIME && dri_sw_ws->vgem_fd >= 0) {
+      struct drm_gem_close arg;
+      memset(&arg, 0, sizeof(arg));
+      arg.handle = dri_sw_dt->vgem_handle;
+
+      drmIoctl(dri_sw_ws->vgem_fd, DRM_IOCTL_GEM_CLOSE, &arg);
+   }
+#endif
+
+   FREE(dri_sw_dt->data);
+
+   FREE(dri_sw_dt);
+}
+
 static struct sw_displaytarget *
-dri_sw_displaytarget_from_handle(struct sw_winsys *winsys,
+dri_sw_displaytarget_from_handle(struct sw_winsys *ws,
                                  const struct pipe_resource *templ,
                                  struct winsys_handle *whandle,
                                  unsigned *stride)
 {
+#if defined(HAVE_LIBDRM)
+   struct dri_sw_winsys *dri_sw_ws = dri_sw_winsys(ws);
+   uint32_t imported_handle;
+   struct dri_sw_displaytarget *dri_sw_dt;
+
+   if (whandle->type != DRM_API_HANDLE_TYPE_FD || dri_sw_ws->vgem_fd < 0) {
+      return NULL;
+   }
+
+   dri_sw_dt = CALLOC_STRUCT(dri_sw_displaytarget);
+   if(!dri_sw_dt)
+      return NULL;
+
+   int ret = drmPrimeFDToHandle(dri_sw_ws->vgem_fd, whandle->handle,
+                                &imported_handle);
+   if (ret) {
+      FREE(dri_sw_dt);
+      return NULL;
+   }
+
+   dri_sw_dt->type = DISPLAYTARGET_TYPE_PRIME;
+   dri_sw_dt->format = templ->format;
+   dri_sw_dt->width = templ->width0;
+   dri_sw_dt->height = templ->height0;
+   dri_sw_dt->vgem_handle = imported_handle;
+   dri_sw_dt->stride = whandle->stride;
+
+   *stride = dri_sw_dt->stride;
+   return (struct sw_displaytarget *)dri_sw_dt;
+#else
    assert(0);
    return NULL;
+#endif
 }
 
 static boolean
-dri_sw_displaytarget_get_handle(struct sw_winsys *winsys,
+dri_sw_displaytarget_get_handle(struct sw_winsys *ws,
                                 struct sw_displaytarget *dt,
                                 struct winsys_handle *whandle)
 {
+#if defined(HAVE_LIBDRM)
+   struct dri_sw_winsys *dri_sw_ws = dri_sw_winsys(ws);
+   if (dri_sw_ws->vgem_fd < 0)
+      return FALSE;
+
+   struct dri_sw_displaytarget *dri_sw_dt = dri_sw_displaytarget(dt);
+   if (whandle->type == DRM_API_HANDLE_TYPE_FD &&
+       dri_sw_dt->type == DISPLAYTARGET_TYPE_PRIME) {
+      int prime_fd;
+      int ret = drmPrimeHandleToFD(dri_sw_ws->vgem_fd,
+                                   dri_sw_dt->vgem_handle,
+                                   DRM_CLOEXEC,
+                                   &prime_fd);
+      if (ret || prime_fd < 0)
+         return FALSE;
+
+      whandle->handle = (unsigned)prime_fd;
+      whandle->stride = dri_sw_dt->stride;
+
+      return TRUE;
+   }
+#else
    assert(0);
+#endif
+
    return FALSE;
 }
 
@@ -196,6 +378,11 @@ dri_sw_displaytarget_display(struct sw_winsys *ws,
 static void
 dri_destroy_sw_winsys(struct sw_winsys *winsys)
 {
+#if defined(HAVE_LIBDRM)
+   int vgem_fd = dri_sw_winsys(winsys)->vgem_fd;
+   if (vgem_fd >= 0)
+      close(vgem_fd);
+#endif
    FREE(winsys);
 }
 
@@ -209,6 +396,9 @@ dri_create_sw_winsys(struct drisw_loader_funcs *lf)
       return NULL;
 
    ws->lf = lf;
+#if defined(HAVE_LIBDRM)
+   ws->vgem_fd = drm_open_vgem();
+#endif
    ws->base.destroy = dri_destroy_sw_winsys;
 
    ws->base.is_displaytarget_format_supported = dri_sw_is_displaytarget_format_supported;
