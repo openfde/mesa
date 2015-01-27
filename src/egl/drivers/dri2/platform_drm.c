@@ -589,6 +589,8 @@ static struct dri2_egl_display_vtbl dri2_drm_display_vtbl = {
    .get_sync_values = dri2_fallback_get_sync_values,
 };
 
+#define DRM_RENDER_DEV_NAME "%s/renderD%d"
+
 EGLBoolean
 dri2_initialize_drm(_EGLDriver *drv, _EGLDisplay *disp)
 {
@@ -608,7 +610,7 @@ dri2_initialize_drm(_EGLDriver *drv, _EGLDisplay *disp)
    gbm = disp->PlatformDisplay;
    if (gbm == NULL) {
       char buf[64];
-      int n = snprintf(buf, sizeof(buf), DRM_DEV_NAME, DRM_DIR_NAME, 0);
+      int n = snprintf(buf, sizeof(buf), DRM_RENDER_DEV_NAME, DRM_DIR_NAME, 128);
       if (n != -1 && n < sizeof(buf))
          fd = open(buf, O_RDWR);
       if (fd < 0)
