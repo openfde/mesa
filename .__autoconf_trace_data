@@ -1,0 +1,4 @@
+configure.ac:12:AC_CONFIG_AUX_DIR:bin
+configure.ac:13:AC_CONFIG_MACRO_DIR:m4
+configure.ac:15:AM_INIT_AUTOMAKE:foreign tar-ustar dist-xz
+configure.ac:65:LT_INIT:disable-static
