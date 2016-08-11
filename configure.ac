@@ -2376,7 +2376,6 @@ if test -n "$with_gallium_drivers"; then
             gallium_require_drm "radeonsi"
             gallium_require_drm_loader
             radeon_llvm_check "radeonsi"
-            require_egl_drm "radeonsi"
             ;;
         xnouveau)
             HAVE_GALLIUM_NOUVEAU=yes
