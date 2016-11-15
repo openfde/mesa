@@ -1476,10 +1476,20 @@ VkResult anv_AllocateMemory(
    struct anv_device_memory *mem;
    VkResult result = VK_SUCCESS;
 
+   /* VK_ANDROID_native_buffer defines VkNativeBufferANDROID as an extension
+    * of VkImageCreateInfo. We abuse the struct by chaining it to
+    * VkMemoryAllocateInfo in the implementation of vkCreateImage.
+    */
+   const VkNativeBufferANDROID *gralloc_info = NULL;
+#ifdef ANDROID
+   gralloc_info = vk_find_struct_const(pAllocateInfo->pNext, NATIVE_BUFFER_ANDROID);
+#endif
+
    assert(pAllocateInfo->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
 
    /* The Vulkan 1.0.33 spec says "allocationSize must be greater than 0". */
-   assert(pAllocateInfo->allocationSize > 0);
+   assert(gralloc_info || pAllocateInfo->allocationSize > 0);
+   assert(!gralloc_info || pAllocateInfo->allocationSize == 0);
 
    /* The kernel relocation API has a limitation of a 32-bit delta value
     * applied to the address before it is written which, in spite of it being
