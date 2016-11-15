@@ -1440,10 +1440,20 @@ VkResult anv_AllocateMemory(
    struct anv_device_memory *mem;
    VkResult result = VK_SUCCESS;
 
+   /* VK_ANDROID_native_buffer defines VkNativeBufferANDROID as an extension
+    * of VkImageCreateInfo. We abuse the struct by chaining it to
+    * VkMemoryAllocateInfo in the implementation of vkCreateImage.
+    */
+   const VkNativeBufferANDROID *gralloc_info = NULL;
+#ifdef ANDROID
+   gralloc_info = vk_find_struct_const(pAllocateInfo->pNext, NATIVE_BUFFER_ANDROID);
+#endif
+
    assert(pAllocateInfo->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
 
    /* The Vulkan 1.0.33 spec says "allocationSize must be greater than 0". */
-   assert(pAllocateInfo->allocationSize > 0);
+   assert(gralloc_info || pAllocateInfo->allocationSize > 0);
+   assert(!gralloc_info || pAllocateInfo->allocationSize == 0);
 
    /* The kernel relocation API has a limitation of a 32-bit delta value
     * applied to the address before it is written which, in spite of it being
@@ -1495,7 +1505,31 @@ VkResult anv_AllocateMemory(
                                    0, &mem->bo);
       if (result != VK_SUCCESS)
          goto fail;
-   } else {
+   }
+#ifdef ANDROID
+   else if (gralloc_info) {
+      if (gralloc_info->handle->numFds != 1) {
+         result = vk_errorf(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR,
+                            "VkNativeBufferANDROID::handle::numFds is %d, "
+                            "expected 1", gralloc_info->handle->numFds);
+         goto fail;
+      }
+
+      int dma_buf = gralloc_info->handle->data[0];
+
+      /* Do not close the gralloc handle's dma_buf fd. The lifetime of the
+       * dma_buf fd must exceed that of the gralloc handle, and we do not own
+       * the gralloc handle.
+       */
+      result = anv_bo_cache_import(device, &device->bo_cache, dma_buf, -1,
+                                   ANV_BO_CACHE_IMPORT_NO_CLOSE_FD
+                                   | ANV_BO_CACHE_IMPORT_IGNORE_SIZE_PARAM,
+                                   &mem->bo);
+      if (result != VK_SUCCESS)
+         goto fail;
+   }
+#endif
+   else {
       result = anv_bo_cache_alloc(device, &device->bo_cache,
                                   pAllocateInfo->allocationSize,
                                   &mem->bo);

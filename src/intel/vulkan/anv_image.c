@@ -32,6 +32,11 @@
 #include "util/debug.h"
 
 #include "vk_format_info.h"
+#include "vk_util.h"
+
+static void
+add_fast_clear_state_buffer(struct anv_image *image,
+                            const struct anv_device *device);
 
 static void
 add_fast_clear_state_buffer(struct anv_image *image,
@@ -111,7 +116,9 @@ get_surface(struct anv_image *image, VkImageAspectFlags aspect)
 }
 
 static VkResult
-choose_isl_tiling_flags(const struct anv_image_create_info *anv_info,
+choose_isl_tiling_flags(struct anv_device *device,
+                        const struct anv_image_create_info *anv_info,
+                        const VkNativeBufferANDROID *gralloc_info,
                         isl_tiling_flags_t *restrict flags)
 {
    *flags = ISL_TILING_ANY_MASK;
@@ -121,6 +128,41 @@ choose_isl_tiling_flags(const struct anv_image_create_info *anv_info,
 
    if (anv_info->isl_tiling_flags)
       *flags &= anv_info->isl_tiling_flags;
+
+#if defined(ANDROID)
+   if (gralloc_info) {
+      int dma_buf = gralloc_info->handle->data[0];
+
+      uint32_t gem_handle = anv_gem_fd_to_handle(device, dma_buf);
+      if (gem_handle == 0) {
+         return vk_errorf(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR,
+                          "DRM_IOCTL_PRIME_FD_TO_HANDLE failed for "
+                          "VkNativeBufferANDROID");
+      }
+
+      int i915_tiling = anv_gem_get_tiling(device, gem_handle);
+      switch (i915_tiling) {
+      case I915_TILING_NONE:
+         *flags &= ISL_TILING_LINEAR_BIT;
+         break;
+      case I915_TILING_X:
+         *flags &= ISL_TILING_X_BIT;
+         break;
+      case I915_TILING_Y:
+         *flags &= ISL_TILING_Y0_BIT;
+         break;
+      case -1:
+         return vk_errorf(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR,
+                          "DRM_IOCTL_I915_GEM_GET_TILING failed for "
+                          "VkNativeBufferANDROID");
+      default:
+         return vk_errorf(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR,
+                          "DRM_IOCTL_I915_GEM_GET_TILING returned unknown "
+                          "tiling %d for VkNativeBufferANDROID", i915_tiling);
+
+      }
+   }
+#endif
 
    return VK_SUCCESS;
 }
@@ -245,9 +287,13 @@ try_make_mcs_surface(const struct anv_device *dev,
 static VkResult
 try_make_aux_surface(const struct anv_device *dev,
                      const VkImageCreateInfo *base_info,
+                     const VkNativeBufferANDROID *gralloc_info,
                      VkImageAspectFlags aspect,
                      struct anv_image *image)
 {
+   if (gralloc_info)
+      return VK_SUCCESS;
+
    if (aspect == VK_IMAGE_ASPECT_DEPTH_BIT) {
       try_make_hiz_surface(dev, base_info, image);
    } else if (aspect == VK_IMAGE_ASPECT_COLOR_BIT &&
@@ -344,8 +390,9 @@ add_fast_clear_state_buffer(struct anv_image *image,
  * Exactly one bit must be set in \a aspect.
  */
 static VkResult
-make_main_surface(const struct anv_device *dev,
+make_main_surface(struct anv_device *dev,
                   const struct anv_image_create_info *anv_info,
+                  const VkNativeBufferANDROID *gralloc_info,
                   VkImageAspectFlags aspect,
                   struct anv_image *image)
 {
@@ -360,7 +407,8 @@ make_main_surface(const struct anv_device *dev,
    };
 
    isl_tiling_flags_t tiling_flags;
-   result = choose_isl_tiling_flags(anv_info, &tiling_flags);
+   result = choose_isl_tiling_flags(dev, anv_info, gralloc_info,
+                                    &tiling_flags);
    if (result != VK_SUCCESS)
       return result;
 
@@ -373,6 +421,19 @@ make_main_surface(const struct anv_device *dev,
                                                aspect, base_info->tiling);
    assert(format != ISL_FORMAT_UNSUPPORTED);
 
+   uint32_t row_pitch = anv_info->stride;
+#ifdef ANDROID
+   if (gralloc_info) {
+      row_pitch = gralloc_info->stride *
+                  (isl_format_get_layout(format)->bpb / 8);
+   }
+#endif
+
+   isl_surf_usage_flags_t usage =
+      choose_isl_surf_usage(base_info->flags, image->usage, aspect);
+   if (gralloc_info)
+      usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
+
    ok = isl_surf_init(&dev->isl_dev, &anv_surf->isl,
       .dim = vk_to_isl_surf_dim[base_info->imageType],
       .format = format,
@@ -383,8 +444,8 @@ make_main_surface(const struct anv_device *dev,
       .array_len = base_info->arrayLayers,
       .samples = base_info->samples,
       .min_alignment = 0,
-      .row_pitch = anv_info->stride,
-      .usage = choose_isl_surf_usage(base_info->flags, image->usage, aspect),
+      .row_pitch = row_pitch,
+      .usage = usage,
       .tiling_flags = tiling_flags);
 
    /* isl_surf_init() will fail only if provided invalid input. Invalid input
@@ -393,8 +454,49 @@ make_main_surface(const struct anv_device *dev,
    assert(ok);
 
    add_surface(image, anv_surf);
+
+   if (gralloc_info)
+      assert(anv_surf->offset == 0);
+
    return VK_SUCCESS;
 }
+
+#ifdef ANDROID
+static VkResult
+import_gralloc(struct anv_device *device,
+               struct anv_image *image,
+               const VkNativeBufferANDROID *gralloc_info,
+               const VkAllocationCallbacks *alloc)
+{
+   VkDevice device_h = anv_device_to_handle(device);
+   VkDeviceMemory mem_h = VK_NULL_HANDLE;
+   VkResult result;
+
+   /* VK_ANDROID_native_buffer defines VkNativeBufferANDROID as an extension
+    * of VkImageCreateInfo. We abuse the struct by chaining it to
+    * VkMemoryAllocateInfo.
+    */
+   result = anv_AllocateMemory(device_h,
+      &(VkMemoryAllocateInfo) {
+         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+         .pNext = gralloc_info,
+         .allocationSize = 0,
+         .memoryTypeIndex = 0, /* XXX: Arbitrary memory type */
+      },
+      alloc,
+      &mem_h);
+
+   if (result != VK_SUCCESS)
+      return result;
+
+   ANV_FROM_HANDLE(anv_device_memory, mem, mem_h);
+   image->mem = mem;
+   image->mem_offset = 0;
+   image->mem_is_owned = true;
+
+   return VK_SUCCESS;
+}
+#endif
 
 VkResult
 anv_image_create(VkDevice _device,
@@ -404,6 +506,8 @@ anv_image_create(VkDevice _device,
 {
    ANV_FROM_HANDLE(anv_device, device, _device);
    const VkImageCreateInfo *base_info = anv_info->vk_info;
+   const VkNativeBufferANDROID *gralloc_info =
+      vk_find_struct_const(base_info->pNext, NATIVE_BUFFER_ANDROID);
    struct anv_image *image = NULL;
    VkResult r;
 
@@ -432,21 +536,30 @@ anv_image_create(VkDevice _device,
    image->tiling = base_info->tiling;
    image->aux_usage = ISL_AUX_USAGE_NONE;
 
+#ifdef ANDROID
+   if (gralloc_info) {
+      r = import_gralloc(device, image, gralloc_info, alloc);
+      if (r != VK_SUCCESS)
+         goto fail;
+   }
+#endif
+
    uint32_t b;
    for_each_bit(b, image->aspects) {
       VkImageAspectFlagBits aspect = 1 << b;
 
-      r = make_main_surface(device, anv_info, aspect, image);
+      r = make_main_surface(device, anv_info, gralloc_info, aspect, image);
       if (r != VK_SUCCESS)
          goto fail;
 
-      r = try_make_aux_surface(device, base_info, aspect, image);
+      r = try_make_aux_surface(device, base_info, gralloc_info, aspect, image);
       if (r != VK_SUCCESS)
          goto fail;
    }
 
-   *pImage = anv_image_to_handle(image);
+   VkImage image_h = anv_image_to_handle(image);
 
+   *pImage = image_h;
    return VK_SUCCESS;
 
 fail:

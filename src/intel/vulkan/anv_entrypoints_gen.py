@@ -271,7 +271,15 @@ def get_entrypoints(doc, entrypoints_to_defines, start_index):
         if extension.attrib['name'] not in supported:
             continue
 
-        assert extension.attrib['supported'] == 'vulkan'
+        # Workaround VK_ANDROID_native_buffer. In vk.xml, it's listed as
+        # supported="disabled", but we patch it to supported="vulkan" in our
+        # custom vk_android_native_buffer.xml.
+        assert (extension.attrib['supported'] == 'vulkan' or
+                extension.attrib['name'] == 'VK_ANDROID_native_buffer')
+
+        if extension.attrib['supported'] != 'vulkan':
+            continue
+
         for command in extension.findall('./require/command'):
             enabled_commands.add(command.attrib['name'])
 
