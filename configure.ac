@@ -68,7 +68,8 @@ OPENCL_VERSION=1
 AC_SUBST([OPENCL_VERSION])
 
 dnl Versions for external dependencies
-LIBDRM_REQUIRED=2.4.66
+# TODO(chadv): Pick real libdrm version after Intel exec fences land
+LIBDRM_REQUIRED=2.4.73
 LIBDRM_RADEON_REQUIRED=2.4.56
 LIBDRM_AMDGPU_REQUIRED=2.4.63
 LIBDRM_INTEL_REQUIRED=2.4.61
