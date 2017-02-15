@@ -313,7 +313,11 @@ static const VkExtensionProperties device_extensions[] = {
    {
       .extensionName = VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
       .specVersion = 1,
-   }
+   },
+   {
+      .extensionName = VK_KHX_EXTERNAL_MEMORY_EXTENSION_NAME,
+      .specVersion = 1,
+   },
 };
 
 static void *
