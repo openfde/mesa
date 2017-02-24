@@ -33,6 +33,10 @@
 
 #include "vk_format_info.h"
 
+static void
+add_fast_clear_state_buffer(struct anv_image *image,
+                            const struct anv_device *device);
+
 /**
  * Exactly one bit must be set in \a aspect.
  */
@@ -131,6 +135,133 @@ add_surface(struct anv_image *image, struct anv_surface *surf)
    image->alignment = MAX2(image->alignment, surf->isl.alignment);
 }
 
+static void
+try_make_hiz_surface(const struct anv_device *dev,
+                     const VkImageCreateInfo *base_info,
+                     struct anv_image *image)
+{
+   bool ok UNUSED;
+
+   assert(image->aux_surface.isl.size == 0);
+
+   /* We don't advertise that depth buffers could be used as storage
+    * images.
+    */
+   assert(!(image->usage & VK_IMAGE_USAGE_STORAGE_BIT));
+
+   /* Allow the user to control HiZ enabling through environment variables.
+    * Disable by default on gen7 because resolves are not currently
+    * implemented pre-BDW.
+    */
+   if (!(image->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+      /* It will never be used as an attachment, HiZ is pointless. */
+   } else if (dev->info.gen == 7) {
+      anv_perf_warn(dev->instance, image, "Implement gen7 HiZ");
+   } else if (base_info->mipLevels > 1) {
+      anv_perf_warn(dev->instance, image, "Enable multi-LOD HiZ");
+   } else if (base_info->arrayLayers > 1) {
+      anv_perf_warn(dev->instance, image, "Implement multi-arrayLayer HiZ clears and resolves");
+   } else if (dev->info.gen == 8 && base_info->samples > 1) {
+      anv_perf_warn(dev->instance, image, "Enable gen8 multisampled HiZ");
+   } else if (!unlikely(INTEL_DEBUG & DEBUG_NO_HIZ)) {
+      ok = isl_surf_get_hiz_surf(&dev->isl_dev, &image->depth_surface.isl,
+                                 &image->aux_surface.isl);
+      assert(ok);
+      add_surface(image, &image->aux_surface);
+      image->aux_usage = ISL_AUX_USAGE_HIZ;
+   }
+}
+
+static void
+try_make_ccs_surface(const struct anv_device *dev,
+                     const VkImageCreateInfo *base_info,
+                     struct anv_image *image)
+{
+   bool ok;
+
+   assert(image->aux_surface.isl.size == 0);
+
+   if (unlikely(INTEL_DEBUG & DEBUG_NO_RBC))
+      return;
+
+   ok = isl_surf_get_ccs_surf(&dev->isl_dev, &image->color_surface.isl,
+                              &image->aux_surface.isl, 0);
+   if (!ok)
+      return;
+
+   /* Disable CCS when it is not useful (i.e., when you can't render
+    * to the image with CCS enabled).
+    */
+   if (!isl_format_supports_rendering(&dev->info,
+                                      image->color_surface.isl.format)) {
+      /* While it may be technically possible to enable CCS for this
+       * image, we currently don't have things hooked up to get it
+       * working.
+       */
+      anv_perf_warn(dev->instance, image,
+                    "This image format doesn't support rendering. "
+                    "Not allocating an CCS buffer.");
+      image->aux_surface.isl.size = 0;
+      return;
+   }
+
+   add_surface(image, &image->aux_surface);
+   add_fast_clear_state_buffer(image, dev);
+
+   /* For images created without MUTABLE_FORMAT_BIT set, we know that
+    * they will always be used with the original format.  In
+    * particular, they will always be used with a format that
+    * supports color compression.  If it's never used as a storage
+    * image, then it will only be used through the sampler or the as
+    * a render target.  This means that it's safe to just leave
+    * compression on at all times for these formats.
+    */
+   if (!(base_info->usage & VK_IMAGE_USAGE_STORAGE_BIT) &&
+       !(base_info->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) &&
+       isl_format_supports_ccs_e(&dev->info, image->color_surface.isl.format)) {
+      image->aux_usage = ISL_AUX_USAGE_CCS_E;
+   }
+}
+
+static void
+try_make_mcs_surface(const struct anv_device *dev,
+                     const VkImageCreateInfo *base_info,
+                     struct anv_image *image)
+{
+   bool ok;
+
+   assert(image->aux_surface.isl.size == 0);
+   assert(!(base_info->usage & VK_IMAGE_USAGE_STORAGE_BIT));
+
+   ok = isl_surf_get_mcs_surf(&dev->isl_dev, &image->color_surface.isl,
+                              &image->aux_surface.isl);
+   if (!ok)
+      return;
+
+   add_surface(image, &image->aux_surface);
+   add_fast_clear_state_buffer(image, dev);
+   image->aux_usage = ISL_AUX_USAGE_MCS;
+}
+
+static VkResult
+try_make_aux_surface(const struct anv_device *dev,
+                     const VkImageCreateInfo *base_info,
+                     VkImageAspectFlags aspect,
+                     struct anv_image *image)
+{
+   if (aspect == VK_IMAGE_ASPECT_DEPTH_BIT) {
+      try_make_hiz_surface(dev, base_info, image);
+   } else if (aspect == VK_IMAGE_ASPECT_COLOR_BIT &&
+              base_info->samples == 1) {
+      try_make_ccs_surface(dev, base_info, image);
+   } else if (aspect == VK_IMAGE_ASPECT_COLOR_BIT &&
+              base_info->samples > 1) {
+      try_make_mcs_surface(dev, base_info, image);
+   }
+
+   return VK_SUCCESS;
+}
+
 /**
  * For color images that have an auxiliary surface, request allocation for an
  * additional buffer that mainly stores fast-clear values. Use of this buffer
@@ -214,10 +345,10 @@ add_fast_clear_state_buffer(struct anv_image *image,
  * Exactly one bit must be set in \a aspect.
  */
 static VkResult
-make_surface(const struct anv_device *dev,
-             struct anv_image *image,
-             const struct anv_image_create_info *anv_info,
-             VkImageAspectFlags aspect)
+make_main_surface(const struct anv_device *dev,
+                  const struct anv_image_create_info *anv_info,
+                  VkImageAspectFlags aspect,
+                  struct anv_image *image)
 {
    const VkImageCreateInfo *base_info = anv_info->vk_info;
    VkResult result;
@@ -263,89 +394,6 @@ make_surface(const struct anv_device *dev,
    assert(ok);
 
    add_surface(image, anv_surf);
-
-   /* Add a HiZ surface to a depth buffer that will be used for rendering.
-    */
-   if (aspect == VK_IMAGE_ASPECT_DEPTH_BIT) {
-      /* We don't advertise that depth buffers could be used as storage
-       * images.
-       */
-       assert(!(image->usage & VK_IMAGE_USAGE_STORAGE_BIT));
-
-      /* Allow the user to control HiZ enabling. Disable by default on gen7
-       * because resolves are not currently implemented pre-BDW.
-       */
-      if (!(image->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-         /* It will never be used as an attachment, HiZ is pointless. */
-      } else if (dev->info.gen == 7) {
-         anv_perf_warn(dev->instance, image, "Implement gen7 HiZ");
-      } else if (base_info->mipLevels > 1) {
-         anv_perf_warn(dev->instance, image, "Enable multi-LOD HiZ");
-      } else if (base_info->arrayLayers > 1) {
-         anv_perf_warn(dev->instance, image,
-                       "Implement multi-arrayLayer HiZ clears and resolves");
-      } else if (dev->info.gen == 8 && base_info->samples > 1) {
-         anv_perf_warn(dev->instance, image, "Enable gen8 multisampled HiZ");
-      } else if (!unlikely(INTEL_DEBUG & DEBUG_NO_HIZ)) {
-         assert(image->aux_surface.isl.size == 0);
-         ok = isl_surf_get_hiz_surf(&dev->isl_dev, &image->depth_surface.isl,
-                                    &image->aux_surface.isl);
-         assert(ok);
-         add_surface(image, &image->aux_surface);
-         image->aux_usage = ISL_AUX_USAGE_HIZ;
-      }
-   } else if (aspect == VK_IMAGE_ASPECT_COLOR_BIT && base_info->samples == 1) {
-      if (!unlikely(INTEL_DEBUG & DEBUG_NO_RBC)) {
-         assert(image->aux_surface.isl.size == 0);
-         ok = isl_surf_get_ccs_surf(&dev->isl_dev, &anv_surf->isl,
-                                    &image->aux_surface.isl, 0);
-         if (ok) {
-
-            /* Disable CCS when it is not useful (i.e., when you can't render
-             * to the image with CCS enabled).
-             */
-            if (!isl_format_supports_rendering(&dev->info, format)) {
-               /* While it may be technically possible to enable CCS for this
-                * image, we currently don't have things hooked up to get it
-                * working.
-                */
-               anv_perf_warn(dev->instance, image,
-                             "This image format doesn't support rendering. "
-                             "Not allocating an CCS buffer.");
-               image->aux_surface.isl.size = 0;
-               return VK_SUCCESS;
-            }
-
-            add_surface(image, &image->aux_surface);
-            add_fast_clear_state_buffer(image, dev);
-
-            /* For images created without MUTABLE_FORMAT_BIT set, we know that
-             * they will always be used with the original format.  In
-             * particular, they will always be used with a format that
-             * supports color compression.  If it's never used as a storage
-             * image, then it will only be used through the sampler or the as
-             * a render target.  This means that it's safe to just leave
-             * compression on at all times for these formats.
-             */
-            if (!(base_info->usage & VK_IMAGE_USAGE_STORAGE_BIT) &&
-                !(base_info->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) &&
-                isl_format_supports_ccs_e(&dev->info, format)) {
-               image->aux_usage = ISL_AUX_USAGE_CCS_E;
-            }
-         }
-      }
-   } else if (aspect == VK_IMAGE_ASPECT_COLOR_BIT && base_info->samples > 1) {
-      assert(image->aux_surface.isl.size == 0);
-      assert(!(base_info->usage & VK_IMAGE_USAGE_STORAGE_BIT));
-      ok = isl_surf_get_mcs_surf(&dev->isl_dev, &anv_surf->isl,
-                                 &image->aux_surface.isl);
-      if (ok) {
-         add_surface(image, &image->aux_surface);
-         add_fast_clear_state_buffer(image, dev);
-         image->aux_usage = ISL_AUX_USAGE_MCS;
-      }
-   }
-
    return VK_SUCCESS;
 }
 
@@ -387,7 +435,13 @@ anv_image_create(VkDevice _device,
 
    uint32_t b;
    for_each_bit(b, image->aspects) {
-      r = make_surface(device, image, anv_info, (1 << b));
+      VkImageAspectFlagBits aspect = 1 << b;
+
+      r = make_main_surface(device, anv_info, aspect, image);
+      if (r != VK_SUCCESS)
+         goto fail;
+
+      r = try_make_aux_surface(device, base_info, aspect, image);
       if (r != VK_SUCCESS)
          goto fail;
    }
