@@ -1176,6 +1176,9 @@ bool
 isl_has_matching_typed_storage_image_format(const struct gen_device_info *devinfo,
                                             enum isl_format fmt);
 
+/** Behavior is undefined if isl does not recognize the modifier. */
+enum isl_tiling isl_tiling_from_drm_format_mod(uint64_t mod);
+
 static inline bool
 isl_tiling_is_any_y(enum isl_tiling tiling)
 {

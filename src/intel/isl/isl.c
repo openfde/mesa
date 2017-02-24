@@ -25,6 +25,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include <drm_fourcc.h>
+
 #include "isl.h"
 #include "isl_gen4.h"
 #include "isl_gen6.h"
@@ -32,6 +34,10 @@
 #include "isl_gen8.h"
 #include "isl_gen9.h"
 #include "isl_priv.h"
+
+#ifndef DRM_FORMAT_MOD_LINEAR
+#define DRM_FORMAT_MOD_LINEAR 0 /* Linux 4.10 */
+#endif
 
 void PRINTFLIKE(3, 4) UNUSED
 __isl_finishme(const char *file, int line, const char *fmt, ...)
@@ -59,6 +65,23 @@ static const struct {
    [8] = {52, 64, 32, 40},
    [9] = {64, 64, 32, 40},
 };
+
+enum isl_tiling
+isl_tiling_from_drm_format_mod(uint64_t mod)
+{
+   switch (mod) {
+   default:
+      unreachable("bad drm format modifier");
+   case DRM_FORMAT_MOD_LINEAR:
+      return ISL_TILING_LINEAR;
+   case I915_FORMAT_MOD_X_TILED:
+      return ISL_TILING_X;
+   case I915_FORMAT_MOD_Y_TILED:
+      return ISL_TILING_Y0;
+   case I915_FORMAT_MOD_Yf_TILED:
+      return ISL_TILING_Yf;
+   }
+}
 
 void
 isl_device_init(struct isl_device *dev,
