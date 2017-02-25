@@ -813,6 +813,15 @@ struct isl_surf_init_info {
    /** Lower bound for isl_surf::row_pitch, in bytes. */
    uint32_t min_row_pitch;
 
+   /**
+    * Exact value for isl_surf::row_pitch. Ignored if zero.
+    *
+    * WARNING: If set, then isl_surf_init() skips many calculations and
+    * validations. If the given row pitch is incompatible with the requested
+    * surface, then behavior is undefined.
+    */
+   uint32_t row_pitch;
+
    isl_surf_usage_flags_t usage;
 
    /** Flags that alter how ISL selects isl_surf::tiling.  */

@@ -1005,6 +1005,9 @@ isl_calc_linear_row_pitch(const struct isl_device *dev,
 {
    const struct isl_format_layout *fmtl = isl_format_get_layout(info->format);
 
+   /* Any override of row_pitch should happen earlier. */
+   assert(info->row_pitch == 0);
+
    uint32_t row_pitch = info->min_row_pitch;
 
    /* First, align the surface to a cache line boundary, as the PRM explains
@@ -1088,6 +1091,9 @@ isl_calc_tiled_row_pitch(const struct isl_device *dev,
 {
    const struct isl_format_layout *fmtl = isl_format_get_layout(info->format);
 
+   /* Any override of row_pitch should happen earlier. */
+   assert(info->row_pitch == 0);
+
    assert(fmtl->bpb % tile_info->format_bpb == 0);
    assert(phys_slice0_sa->w % fmtl->bw == 0);
 
@@ -1112,7 +1118,10 @@ isl_calc_row_pitch(const struct isl_device *dev,
                    const struct isl_tile_info *tile_info,
                    const struct isl_extent2d *phys_slice0_sa)
 {
-   if (tile_info->tiling == ISL_TILING_LINEAR) {
+   if (info->row_pitch != 0) {
+      /* Override the usual calculation and validation. */
+      return info->row_pitch;
+   } else if (tile_info->tiling == ISL_TILING_LINEAR) {
       return isl_calc_linear_row_pitch(dev, info, phys_slice0_sa);
    } else {
       return isl_calc_tiled_row_pitch(dev, info, tile_info, phys_slice0_sa);
