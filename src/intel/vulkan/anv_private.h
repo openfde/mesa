@@ -2100,4 +2100,144 @@ ANV_DEFINE_NONDISP_HANDLE_CASTS(anv_shader_module, VkShaderModule)
 #  undef genX
 #endif
 
+/**
+ * A wrapper for a Vulkan output array. A Vulkan output array is one that
+ * follows the convention of the parameters to
+ * vkGetPhysicalDeviceQueueFamilyProperties().
+ *
+ * Example Usage:
+ *
+ *    VkResult
+ *    vkGetPhysicalDeviceQueueFamilyProperties(
+ *       VkPhysicalDevice           physicalDevice,
+ *       uint32_t*                  pQueueFamilyPropertyCount,
+ *       VkQueueFamilyProperties*   pQueueFamilyProperties)
+ *    {
+ *       ANV_OUTARRAY_MAKE(props, pQueueFamilyProperties,
+ *                         pQueueFamilyPropertyCount);
+ *
+ *       anv_outarray_append(&props, p) {
+ *          p->queueFlags = ...;
+ *          p->queueCount = ...;
+ *       }
+ *
+ *       anv_outarray_append(&props, p) {
+ *          p->queueFlags = ...;
+ *          p->queueCount = ...;
+ *       }
+ *
+ *       if (anv_outarray_is_incomple(&props))
+ *          return VK_INCOMPLETE;
+ *
+ *       return VK_SUCCESS;
+ *    }
+ */
+struct __anv_outarray {
+   /** May be null. */
+   void *data;
+
+   /**
+    * Capacity, in number of elements. Capacity is unlimited (UINT32_MAX) if
+    * data is null.
+    */
+   uint32_t cap;
+
+   /**
+    * Count of elements successfully written to the array. Every write is
+    * considered successful if data is null.
+    */
+   uint32_t *filled_len;
+
+   /**
+    * Count of elements that would have been written to the array if its
+    * capacity were sufficient. Vulkan functions often return VK_INCOMPLETE
+    * when `*filled_len < wanted_len`.
+    */
+   uint32_t wanted_len;
+};
+
+static inline void
+__anv_outarray_init(struct __anv_outarray *restrict a,
+                    void *data, uint32_t *restrict len)
+{
+   a->data = data;
+   a->cap = *len;
+   a->filled_len = len;
+   *a->filled_len = 0;
+   a->wanted_len = 0;
+
+   if (a->data == NULL)
+      a->cap = UINT32_MAX;
+}
+
+static inline bool
+__anv_outarray_is_incomplete(const struct __anv_outarray *a)
+{
+   return *a->filled_len < a->wanted_len;
+}
+
+static inline void *
+__anv_outarray_next(struct __anv_outarray *a, size_t elem_size)
+{
+   void *p = NULL;
+
+   a->wanted_len += 1;
+
+   if (*a->filled_len >= a->cap)
+      return NULL;
+
+   if (a->data != NULL)
+      p = a->data + (*a->filled_len) * elem_size;
+
+   *a->filled_len += 1;
+
+   return p;
+}
+
+#define anv_outarray(elem_t) \
+   struct { \
+      struct __anv_outarray base; \
+      elem_t meta[]; \
+   }
+
+#define anv_outarray_typeof_elem(a) __typeof__((a)->meta[0])
+#define anv_outarray_sizeof_elem(a) sizeof((a)->meta[0])
+
+#define anv_outarray_init(a, data, len) \
+   __anv_outarray_init(&(a)->base, (data), (len))
+
+#define ANV_OUTARRAY_MAKE(name, data, len) \
+   anv_outarray(__typeof__((data)[0])) name; \
+   anv_outarray_init(&name, (data), (len))
+
+#define anv_outarray_is_incomple(a) \
+   __anv_outarray_is_incomplete(&(a)->base)
+
+#define anv_outarray_next(a) \
+   ((anv_outarray_typeof_elem(a) *) \
+      __anv_outarray_next(&(a)->base, anv_outarray_sizeof_elem(a)))
+
+/**
+ * Append to a Vulkan output array.
+ *
+ * This is a block-based macro. For example:
+ *
+ *    anv_outarray_append(&a, elem) {
+ *       elem->foo = ...;
+ *       elem->bar = ...;
+ *    }
+ *
+ * The array `a` has type `anv_outarray(elem_t) *`. It is usually declared with
+ * ANV_OUTARRAY_MAKE(). The variable `elem` is block-scoped and has type
+ * `elem_t *`.
+ *
+ * The macro unconditionally increments the array's `wanted_len`. If the array
+ * is not full, then the macro also increment its `filled_len` and then
+ * executes the block. When the block is executed, `elem` is non-null and
+ * points to the newly appended element.
+ */
+#define anv_outarray_append(a, elem) \
+   for (anv_outarray_typeof_elem(a) *elem = anv_outarray_next(a); \
+        elem != NULL; elem = NULL)
+
 #endif /* ANV_PRIVATE_H */
