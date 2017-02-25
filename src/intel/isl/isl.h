@@ -811,7 +811,7 @@ struct isl_surf_init_info {
    uint32_t min_alignment;
 
    /** Lower bound for isl_surf::row_pitch, in bytes. */
-   uint32_t min_pitch;
+   uint32_t min_row_pitch;
 
    isl_surf_usage_flags_t usage;
 

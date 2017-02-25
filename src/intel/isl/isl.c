@@ -1005,7 +1005,7 @@ isl_calc_linear_row_pitch(const struct isl_device *dev,
 {
    const struct isl_format_layout *fmtl = isl_format_get_layout(info->format);
 
-   uint32_t row_pitch = info->min_pitch;
+   uint32_t row_pitch = info->min_row_pitch;
 
    /* First, align the surface to a cache line boundary, as the PRM explains
     * below.
@@ -1286,8 +1286,8 @@ isl_surf_init_s(const struct isl_device *dev,
                        tile_info.logical_extent_el.width);
 
       row_pitch = total_w_tl * tile_info.phys_extent_B.width;
-      if (row_pitch < info->min_pitch) {
-         row_pitch = isl_align_npot(info->min_pitch,
+      if (row_pitch < info->min_row_pitch) {
+         row_pitch = isl_align_npot(info->min_row_pitch,
                                     tile_info.phys_extent_B.width);
       }
 

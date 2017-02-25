@@ -159,7 +159,7 @@ get_blorp_surf_for_anv_buffer(struct anv_device *device,
                  .levels = 1,
                  .array_len = 1,
                  .samples = 1,
-                 .min_pitch = row_pitch,
+                 .min_row_pitch = row_pitch,
                  .usage = ISL_SURF_USAGE_TEXTURE_BIT |
                           ISL_SURF_USAGE_RENDER_TARGET_BIT,
                  .tiling_flags = ISL_TILING_LINEAR_BIT);
