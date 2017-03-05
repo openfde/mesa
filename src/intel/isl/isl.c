@@ -1008,8 +1008,6 @@ isl_calc_linear_row_pitch(const struct isl_device *dev,
    /* Any override of row_pitch should happen earlier. */
    assert(info->row_pitch == 0);
 
-   uint32_t row_pitch = info->min_row_pitch;
-
    /* First, align the surface to a cache line boundary, as the PRM explains
     * below.
     *
@@ -1056,7 +1054,7 @@ isl_calc_linear_row_pitch(const struct isl_device *dev,
     */
    assert(phys_slice0_sa->w % fmtl->bw == 0);
    const uint32_t bs = fmtl->bpb / 8;
-   row_pitch = MAX(row_pitch, bs * (phys_slice0_sa->w / fmtl->bw));
+   uint32_t row_pitch = bs * (phys_slice0_sa->w / fmtl->bw);
 
    /* From the Broadwel PRM >> Volume 2d: Command Reference: Structures >>
     * RENDER_SURFACE_STATE Surface Pitch (p349):
@@ -1103,13 +1101,7 @@ isl_calc_tiled_row_pitch(const struct isl_device *dev,
       isl_align_div(total_w_el * tile_el_scale,
                     tile_info->logical_extent_el.width);
 
-   uint32_t row_pitch = total_w_tl * tile_info->phys_extent_B.width;
-   if (row_pitch < info->min_row_pitch) {
-      row_pitch = isl_align_npot(info->min_row_pitch,
-                                 tile_info->phys_extent_B.width);
-   }
-
-   return row_pitch;
+   return total_w_tl * tile_info->phys_extent_B.width;
 }
 
 static uint32_t
