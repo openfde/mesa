@@ -43,6 +43,7 @@ supported_extensions = [
    'VK_KHX_external_memory',
    'VK_KHX_external_memory_capabilities',
    'VK_KHX_external_memory_fd',
+   'VK_MESAX_external_memory_dma_buf',
 ]
 
 # We generate a static hash table for entry point lookup
