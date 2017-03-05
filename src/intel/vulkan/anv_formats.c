@@ -701,7 +701,7 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2KHR(
     *    behave as if VkPhysicalDeviceExternalImageFormatInfoKHX was not
     *    present and VkExternalImageFormatPropertiesKHX will be ignored.
     */
-   if (external_info->handleType != 0) {
+   if (external_info && external_info->handleType != 0) {
       /* FINISHME: Support at least one external memory type for images. */
       (void) external_props;
 
