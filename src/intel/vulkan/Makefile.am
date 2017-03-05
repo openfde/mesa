@@ -27,9 +27,6 @@ noinst_HEADERS = \
 	$(top_srcdir)/include/vulkan/vk_platform.h \
 	$(top_srcdir)/include/vulkan/vulkan.h
 
-vulkan_include_HEADERS = \
-	$(top_srcdir)/include/vulkan/vulkan_intel.h
-
 lib_LTLIBRARIES = libvulkan_intel.la
 
 check_LTLIBRARIES = libvulkan-test.la
