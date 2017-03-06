@@ -1005,7 +1005,8 @@ isl_calc_linear_row_pitch(const struct isl_device *dev,
 {
    const struct isl_format_layout *fmtl = isl_format_get_layout(info->format);
 
-   uint32_t row_pitch = info->min_pitch;
+   /* Any override of row_pitch should happen earlier. */
+   assert(info->row_pitch == 0);
 
    /* First, align the surface to a cache line boundary, as the PRM explains
     * below.
@@ -1053,7 +1054,7 @@ isl_calc_linear_row_pitch(const struct isl_device *dev,
     */
    assert(phys_slice0_sa->w % fmtl->bw == 0);
    const uint32_t bs = fmtl->bpb / 8;
-   row_pitch = MAX(row_pitch, bs * (phys_slice0_sa->w / fmtl->bw));
+   uint32_t row_pitch = bs * (phys_slice0_sa->w / fmtl->bw);
 
    /* From the Broadwel PRM >> Volume 2d: Command Reference: Structures >>
     * RENDER_SURFACE_STATE Surface Pitch (p349):
@@ -1078,6 +1079,45 @@ isl_calc_linear_row_pitch(const struct isl_device *dev,
    }
 
    return row_pitch;
+}
+
+static uint32_t
+isl_calc_tiled_row_pitch(const struct isl_device *dev,
+                         const struct isl_surf_init_info *info,
+                         const struct isl_tile_info *tile_info,
+                         const struct isl_extent2d *phys_slice0_sa)
+{
+   const struct isl_format_layout *fmtl = isl_format_get_layout(info->format);
+
+   /* Any override of row_pitch should happen earlier. */
+   assert(info->row_pitch == 0);
+
+   assert(fmtl->bpb % tile_info->format_bpb == 0);
+   assert(phys_slice0_sa->w % fmtl->bw == 0);
+
+   const uint32_t tile_el_scale = fmtl->bpb / tile_info->format_bpb;
+   const uint32_t total_w_el = phys_slice0_sa->width / fmtl->bw;
+   const uint32_t total_w_tl =
+      isl_align_div(total_w_el * tile_el_scale,
+                    tile_info->logical_extent_el.width);
+
+   return total_w_tl * tile_info->phys_extent_B.width;
+}
+
+static uint32_t
+isl_calc_row_pitch(const struct isl_device *dev,
+                   const struct isl_surf_init_info *info,
+                   const struct isl_tile_info *tile_info,
+                   const struct isl_extent2d *phys_slice0_sa)
+{
+   if (info->row_pitch != 0) {
+      /* Override the usual calculation and validation. */
+      return info->row_pitch;
+   } else if (tile_info->tiling == ISL_TILING_LINEAR) {
+      return isl_calc_linear_row_pitch(dev, info, phys_slice0_sa);
+   } else {
+      return isl_calc_tiled_row_pitch(dev, info, tile_info, phys_slice0_sa);
+   }
 }
 
 /**
@@ -1252,9 +1292,11 @@ isl_surf_init_s(const struct isl_device *dev,
    uint32_t pad_bytes;
    isl_apply_surface_padding(dev, info, &tile_info, &total_h_el, &pad_bytes);
 
-   uint32_t row_pitch, size, base_alignment;
+   const uint32_t row_pitch = isl_calc_row_pitch(dev, info, &tile_info,
+                                                 &phys_slice0_sa);
+
+   uint32_t size, base_alignment;
    if (tiling == ISL_TILING_LINEAR) {
-      row_pitch = isl_calc_linear_row_pitch(dev, info, &phys_slice0_sa);
       size = row_pitch * total_h_el + pad_bytes;
 
       /* From the Broadwell PRM Vol 2d, RENDER_SURFACE_STATE::SurfaceBaseAddress:
@@ -1276,21 +1318,6 @@ isl_surf_init_s(const struct isl_device *dev,
       }
       base_alignment = isl_round_up_to_power_of_two(base_alignment);
    } else {
-      assert(fmtl->bpb % tile_info.format_bpb == 0);
-      const uint32_t tile_el_scale = fmtl->bpb / tile_info.format_bpb;
-
-      assert(phys_slice0_sa.w % fmtl->bw == 0);
-      const uint32_t total_w_el = phys_slice0_sa.width / fmtl->bw;
-      const uint32_t total_w_tl =
-         isl_align_div(total_w_el * tile_el_scale,
-                       tile_info.logical_extent_el.width);
-
-      row_pitch = total_w_tl * tile_info.phys_extent_B.width;
-      if (row_pitch < info->min_pitch) {
-         row_pitch = isl_align_npot(info->min_pitch,
-                                    tile_info.phys_extent_B.width);
-      }
-
       total_h_el += isl_align_div_npot(pad_bytes, row_pitch);
       const uint32_t total_h_tl =
          isl_align_div(total_h_el, tile_info.logical_extent_el.height);
