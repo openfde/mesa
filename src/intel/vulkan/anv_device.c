@@ -32,6 +32,7 @@
 #include "util/strtod.h"
 #include "util/debug.h"
 #include "util/build_id.h"
+#include "util/mesa-sha1.h"
 #include "util/vk_util.h"
 
 #include "genxml/gen7_pack.h"
@@ -52,19 +53,59 @@ compiler_perf_log(void *data, const char *fmt, ...)
    va_end(args);
 }
 
-static bool
-anv_device_get_cache_uuid(void *uuid)
+static VkResult
+anv_physical_device_init_uuids(struct anv_physical_device *device)
 {
    const struct build_id_note *note = build_id_find_nhdr("libvulkan_intel.so");
-   if (!note)
-      return false;
+   if (!note) {
+      return vk_errorf(VK_ERROR_INITIALIZATION_FAILED,
+                       "Failed to find build-id");
+   }
 
-   unsigned len = build_id_length(note);
-   if (len < VK_UUID_SIZE)
-      return false;
+   unsigned build_id_len = build_id_length(note);
+   if (build_id_len < 20) {
+      return vk_errorf(VK_ERROR_INITIALIZATION_FAILED,
+                       "build-id too short.  It needs to be a SHA");
+   }
 
-   memcpy(uuid, build_id_data(note), VK_UUID_SIZE);
-   return true;
+   uint8_t sha1[20];
+   STATIC_ASSERT(VK_UUID_SIZE <= sizeof(sha1));
+   struct mesa_sha1 *sha1_ctx = _mesa_sha1_init();
+   if (sha1_ctx == NULL)
+      return vk_error(VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   /* The pipeline cache UUID is used for determining when a pipeline cache is
+    * invalid.  It needs both a driver build and the PCI ID of the device.
+    */
+   _mesa_sha1_update(sha1_ctx, build_id_data(note), build_id_len);
+   _mesa_sha1_update(sha1_ctx, &device->chipset_id, sizeof(device->chipset_id));
+   _mesa_sha1_final(sha1_ctx, sha1);
+   memcpy(device->pipeline_cache_uuid, sha1, VK_UUID_SIZE);
+
+   /* The driver UUID is used for determining sharability of images and memory
+    * between two Vulkan instances in separate processes.  People who want to
+    * share memory need to also check the device UUID (below) so all this
+    * needs to be is the build-id.
+    */
+   memcpy(device->driver_uuid, build_id_data(note), VK_UUID_SIZE);
+
+   sha1_ctx = _mesa_sha1_init();
+   if (sha1_ctx == NULL)
+      return vk_error(VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   /* The device UUID uniquely identifies the given device within the machine.
+    * Since we never have more than one device, this doesn't need to be a real
+    * UUID.  However, on the off-chance that someone tries to use this to
+    * cache pre-tiled images or something of the like, we use the PCI ID and
+    * some bits if ISL info to ensure that this is safe.
+    */
+   _mesa_sha1_update(sha1_ctx, &device->chipset_id, sizeof(device->chipset_id));
+   _mesa_sha1_update(sha1_ctx, &device->isl_dev.has_bit6_swizzling,
+                     sizeof(device->isl_dev.has_bit6_swizzling));
+   _mesa_sha1_final(sha1_ctx, sha1);
+   memcpy(device->device_uuid, sha1, VK_UUID_SIZE);
+
+   return VK_SUCCESS;
 }
 
 static VkResult
@@ -148,11 +189,6 @@ anv_physical_device_init(struct anv_physical_device *device,
       goto fail;
    }
 
-   if (!anv_device_get_cache_uuid(device->uuid)) {
-      result = vk_errorf(VK_ERROR_INITIALIZATION_FAILED,
-                         "cannot generate UUID");
-      goto fail;
-   }
    bool swizzled = anv_gem_get_bit6_swizzle(fd, I915_TILING_X);
 
    /* GENs prior to 8 do not support EU/Subslice info */
@@ -192,13 +228,17 @@ anv_physical_device_init(struct anv_physical_device *device,
    device->compiler->shader_debug_log = compiler_debug_log;
    device->compiler->shader_perf_log = compiler_perf_log;
 
+   isl_device_init(&device->isl_dev, &device->info, swizzled);
+
+   result = anv_physical_device_init_uuids(device);
+   if (result != VK_SUCCESS)
+      goto fail;
+
    result = anv_init_wsi(device);
    if (result != VK_SUCCESS) {
       ralloc_free(device->compiler);
       goto fail;
    }
-
-   isl_device_init(&device->isl_dev, &device->info, swizzled);
 
    device->local_fd = fd;
    return VK_SUCCESS;
@@ -243,6 +283,10 @@ static const VkExtensionProperties global_extensions[] = {
       .extensionName = VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
       .specVersion = 1,
    },
+   {
+      .extensionName = VK_KHX_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
+      .specVersion = 1,
+   },
 };
 
 static const VkExtensionProperties device_extensions[] = {
@@ -269,7 +313,15 @@ static const VkExtensionProperties device_extensions[] = {
    {
       .extensionName = VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
       .specVersion = 1,
-   }
+   },
+   {
+      .extensionName = VK_KHX_EXTERNAL_MEMORY_EXTENSION_NAME,
+      .specVersion = 1,
+   },
+   {
+      .extensionName = VK_KHX_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
+      .specVersion = 1,
+   },
 };
 
 static void *
@@ -645,17 +697,29 @@ void anv_GetPhysicalDeviceProperties(
    };
 
    strcpy(pProperties->deviceName, pdevice->name);
-   memcpy(pProperties->pipelineCacheUUID, pdevice->uuid, VK_UUID_SIZE);
+   memcpy(pProperties->pipelineCacheUUID,
+          pdevice->pipeline_cache_uuid, VK_UUID_SIZE);
 }
 
 void anv_GetPhysicalDeviceProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkPhysicalDeviceProperties2KHR*             pProperties)
 {
+   ANV_FROM_HANDLE(anv_physical_device, pdevice, physicalDevice);
+
    anv_GetPhysicalDeviceProperties(physicalDevice, &pProperties->properties);
 
    vk_foreach_struct(ext, pProperties->pNext) {
       switch (ext->sType) {
+      case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES_KHX: {
+         VkPhysicalDeviceIDPropertiesKHX *id_props =
+            (VkPhysicalDeviceIDPropertiesKHX *)ext;
+         memcpy(id_props->deviceUUID, pdevice->device_uuid, VK_UUID_SIZE);
+         memcpy(id_props->driverUUID, pdevice->driver_uuid, VK_UUID_SIZE);
+         /* The LUID is for Windows. */
+         id_props->deviceLUIDValid = false;
+         break;
+      }
       default:
          anv_debug_ignored_stype(ext->sType);
          break;
@@ -1305,7 +1369,7 @@ VkResult anv_AllocateMemory(
 {
    ANV_FROM_HANDLE(anv_device, device, _device);
    struct anv_device_memory *mem;
-   VkResult result;
+   VkResult result = VK_SUCCESS;
 
    assert(pAllocateInfo->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
 
@@ -1323,17 +1387,49 @@ VkResult anv_AllocateMemory(
    if (mem == NULL)
       return vk_error(VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   /* The kernel is going to give us whole pages anyway */
-   uint64_t alloc_size = align_u64(pAllocateInfo->allocationSize, 4096);
-
-   result = anv_bo_init_new(&mem->bo, device, alloc_size);
-   if (result != VK_SUCCESS)
-      goto fail;
-
    mem->type_index = pAllocateInfo->memoryTypeIndex;
-
    mem->map = NULL;
    mem->map_size = 0;
+
+   const VkImportMemoryFdInfoKHX *fd_info =
+      vk_find_struct_const(pAllocateInfo->pNext, IMPORT_MEMORY_FD_INFO_KHX);
+
+   /* The Vulkan spec permits handleType to be 0, in which case the struct is
+    * ignored.
+    */
+   if (fd_info && fd_info->handleType) {
+      /* At the moment, we only support the OPAQUE_FD memory type which is
+       * just a GEM buffer.
+       */
+      assert(fd_info->handleType ==
+             VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHX);
+
+      uint32_t gem_handle = anv_gem_fd_to_handle(device, fd_info->fd);
+      if (!gem_handle) {
+         result = vk_error(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHX);
+         goto fail;
+      }
+
+      /* From the Vulkan spec:
+       *
+       *    "Importing memory from a file descriptor transfers ownership of
+       *    the file descriptor from the application to the Vulkan
+       *    implementation. The application must not perform any operations on
+       *    the file descriptor after a successful import."
+       *
+       * If the import fails, we leave the file descriptor open.
+       */
+      close(fd_info->fd);
+
+      anv_bo_init(&mem->bo, gem_handle, pAllocateInfo->allocationSize);
+   } else {
+      /* The kernel is going to give us whole pages anyway */
+      uint64_t alloc_size = align_u64(pAllocateInfo->allocationSize, 4096);
+
+      result = anv_bo_init_new(&mem->bo, device, alloc_size);
+      if (result != VK_SUCCESS)
+         goto fail;
+   }
 
    *pMem = anv_device_memory_to_handle(mem);
 
@@ -1343,6 +1439,42 @@ VkResult anv_AllocateMemory(
    vk_free2(&device->alloc, pAllocator, mem);
 
    return result;
+}
+
+VkResult anv_GetMemoryFdKHX(
+    VkDevice                                    device_h,
+    VkDeviceMemory                              memory_h,
+    VkExternalMemoryHandleTypeFlagBitsKHX       handleType,
+    int*                                        pFd)
+{
+   ANV_FROM_HANDLE(anv_device, dev, device_h);
+   ANV_FROM_HANDLE(anv_device_memory, mem, memory_h);
+
+   /* We support only one handle type. */
+   assert(handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHX);
+
+   int fd = anv_gem_handle_to_fd(dev, mem->bo.gem_handle);
+   if (fd == -1)
+      return vk_error(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHX);
+
+   *pFd = fd;
+
+   return VK_SUCCESS;
+}
+
+VkResult anv_GetMemoryFdPropertiesKHX(
+    VkDevice                                    device_h,
+    VkExternalMemoryHandleTypeFlagBitsKHX       handleType,
+    int                                         fd,
+    VkMemoryFdPropertiesKHX*                    pMemoryFdProperties)
+{
+   /* The valid usage section for this function says:
+    *
+    *    "handleType must not be one of the handle types defined as opaque."
+    *
+    * Since we only handle opaque handles for now, there are no FD properties.
+    */
+   return VK_ERROR_INVALID_EXTERNAL_HANDLE_KHX;
 }
 
 void anv_FreeMemory(
