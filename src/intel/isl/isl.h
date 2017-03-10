@@ -473,6 +473,9 @@ typedef uint32_t isl_tiling_flags_t;
 /** The Skylake BSpec refers to Yf and Ys as "standard tiling formats". */
 #define ISL_TILING_STD_Y_MASK             (ISL_TILING_Yf_BIT | \
                                            ISL_TILING_Ys_BIT)
+
+#define ISL_TILING_AUX_MASK               (ISL_TILING_HIZ_BIT | \
+                                           ISL_TILING_CCS_BIT)
 /** @} */
 
 /**
@@ -1180,6 +1183,12 @@ static inline bool
 isl_tiling_is_std_y(enum isl_tiling tiling)
 {
    return (1u << tiling) & ISL_TILING_STD_Y_MASK;
+}
+
+static inline bool
+isl_tiling_is_aux(enum isl_tiling tiling)
+{
+   return (1u << tiling) & ISL_TILING_AUX_MASK;
 }
 
 struct isl_extent2d ATTRIBUTE_CONST
