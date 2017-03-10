@@ -1089,18 +1089,39 @@ isl_calc_min_row_pitch(const struct isl_device *dev,
    }
 }
 
-static uint32_t
+static bool
 isl_calc_row_pitch(const struct isl_device *dev,
                    const struct isl_surf_init_info *surf_info,
                    const struct isl_tile_info *tile_info,
                    enum isl_dim_layout dim_layout,
-                   const struct isl_extent2d *phys_slice0_sa)
+                   const struct isl_extent2d *phys_slice0_sa,
+                   uint32_t *out_row_pitch)
 {
    const uint32_t alignment =
       isl_calc_row_pitch_alignment(surf_info, tile_info);
 
-   return isl_calc_min_row_pitch(dev, surf_info, tile_info, phys_slice0_sa,
-                                 alignment);
+   const uint32_t row_pitch =
+      isl_calc_min_row_pitch(dev, surf_info, tile_info, phys_slice0_sa,
+                             alignment);
+
+   const uint32_t row_pitch_tiles = row_pitch / tile_info->phys_extent_B.width;
+
+   /* Check that the pitch fits in RENDER_SURFACE_STATE::SurfacePitch or
+    * AuxiliarySurfacePitch.
+    */
+   if (dim_layout == ISL_DIM_LAYOUT_GEN9_1D) {
+      /* SurfacePitch is ignored for this layout.
+       * FINISHME: How to validate row pitch for ISL_DIM_LAYOUT_GEN9_1D?
+       */
+   } else if (isl_tiling_is_aux(tile_info->tiling)) {
+      if (row_pitch_tiles > (1 << 9))
+         return false;
+   } else if (row_pitch > (1 << 17)) {
+      return false;
+   }
+
+   *out_row_pitch = row_pitch;
+   return true;
 }
 
 /**
@@ -1275,8 +1296,10 @@ isl_surf_init_s(const struct isl_device *dev,
    uint32_t pad_bytes;
    isl_apply_surface_padding(dev, info, &tile_info, &total_h_el, &pad_bytes);
 
-   const uint32_t row_pitch = isl_calc_row_pitch(dev, info, &tile_info,
-                                                 dim_layout, &phys_slice0_sa);
+   uint32_t row_pitch;
+   if (!isl_calc_row_pitch(dev, info, &tile_info, dim_layout,
+                           &phys_slice0_sa, &row_pitch))
+      return false;
 
    uint32_t size, base_alignment;
    if (tiling == ISL_TILING_LINEAR) {
