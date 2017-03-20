@@ -216,6 +216,7 @@ def num_from_str(num_str):
 class Field(object):
     ufixed_pattern = re.compile(r"u(\d+)\.(\d+)")
     sfixed_pattern = re.compile(r"s(\d+)\.(\d+)")
+    surface_pitch_pattern = re.compile(r"\w*Surface(Q?)Pitch\w*")
 
     def __init__(self, parser, attrs):
         self.parser = parser
@@ -224,6 +225,15 @@ class Field(object):
         self.start = int(attrs["start"])
         self.end = int(attrs["end"])
         self.type = attrs["type"]
+
+        if parser.instruction:
+            self.container_name = parser.instruction
+        elif parser.struct:
+            self.container_name = parser.struct
+        elif parser.register:
+            self.container_name = parser.register
+        else:
+            assert False
 
         if "prefix" in attrs:
             self.prefix = attrs["prefix"]
@@ -601,10 +611,9 @@ class Parser(object):
         if default_fields:
             print('#define %-40s\\' % (self.gen_prefix(name + '_header')))
             print(",  \\\n".join(default_fields))
-            print('')
 
+        self.emit_field_sizes(self.instruction, self.group)
         self.emit_template_struct(self.instruction, self.group)
-
         self.emit_pack_function(self.instruction, self.group)
 
     def emit_register(self):
@@ -626,6 +635,7 @@ class Parser(object):
             print('#define %-33s %6d' %
                   (self.gen_prefix(name + "_length"), self.length))
 
+        self.emit_field_sizes(self.struct, self.group)
         self.emit_template_struct(self.struct, self.group)
         self.emit_pack_function(self.struct, self.group)
 
@@ -638,6 +648,20 @@ class Parser(object):
                 name = value.name
             print('   %-36s = %6d,' % (name.upper(), value.value))
         print('};\n')
+
+    def emit_field_sizes(self, container_name, group):
+        for field in group.fields:
+            if type(field) is not Field:
+                continue
+            if not hasattr(field, 'name'):
+                continue
+            if not Field.surface_pitch_pattern.match(field.name):
+                continue
+            name = self.gen_prefix('%s_%s_bits' %
+                    (container_name, field.name))
+            bits = 1 + field.end - field.start
+            print('#define %-56s %2d' % (name, bits))
+        print('')
 
     def parse(self, filename):
         file = open(filename, "rb")
