@@ -29,7 +29,7 @@ EXTRA_DIST += \
 
 SUFFIXES = _pack.h _xml.h .xml
 
-$(GENXML_GENERATED_FILES): genxml/gen_pack_header.py
+$(GENXML_PACK_GENERATED_FILES): genxml/gen_pack_header.py
 
 .xml_pack.h:
 	$(MKDIR_GEN)
@@ -41,6 +41,12 @@ $(GENXML_GENERATED_FILES): genxml/gen_zipped_file.py
 	$(MKDIR_GEN)
 	$(AM_V_GEN) $(PYTHON2) $(srcdir)/genxml/gen_zipped_file.py $< > $@ || ($(RM) $@; false)
 
+genxml/genX_bits.h: genxml/gen_bits_header.py
+genxml/genX_bits.h: $(GENXML_PACK_GENERATED_FILES)
+	$(MKDIR_GEN)
+	$(AM_V_GEN) $(PYTHON2) $(srcdir)/genxml/gen_bits_header.py \
+		$(GENXML_PACK_GENERATED_FILES) > $@ || ($(RM) $@; false)
+
 EXTRA_DIST += \
 	genxml/gen4.xml \
 	genxml/gen45.xml \
@@ -50,6 +56,7 @@ EXTRA_DIST += \
 	genxml/gen75.xml \
 	genxml/gen8.xml \
 	genxml/gen9.xml \
+	genxml/genX_bits.h \
 	genxml/genX_pack.h \
 	genxml/gen_macros.h \
 	genxml/gen_pack_header.py \
