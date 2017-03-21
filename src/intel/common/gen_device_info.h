@@ -27,6 +27,8 @@
 
 #include <stdbool.h>
 
+#include "util/macros.h"
+
 /**
  * Intel hardware information and quirks
  */
@@ -176,5 +178,6 @@ struct gen_device_info
 
 bool gen_get_device_info(int devid, struct gen_device_info *devinfo);
 const char *gen_get_device_name(int devid);
+int gen_get_version_10x(const struct gen_device_info *devinfo) ATTRIBUTE_PURE;
 
 #endif /* GEN_DEVICE_INFO_H */

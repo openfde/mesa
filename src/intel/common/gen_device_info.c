@@ -604,3 +604,14 @@ gen_get_device_name(int devid)
       return NULL;
    }
 }
+
+int
+gen_get_version_10x(const struct gen_device_info *devinfo)
+{
+   int v = 10 * devinfo->gen;
+
+   if (devinfo->is_haswell || devinfo->is_g4x)
+      v += 5;
+
+   return v;
+}
