@@ -63,6 +63,9 @@ isl/isl_format_layout.c: isl/gen_format_layout.py \
 	$(PYTHON_GEN) $(srcdir)/isl/gen_format_layout.py \
 	    --csv $(srcdir)/isl/isl_format_layout.csv --out $@
 
+# Dependencies on generated files
+$(builddir)/isl/isl.o: $(srcdir)/genxml/genX_bits.h
+
 # ----------------------------------------------------------------------------
 #  Tests
 # ----------------------------------------------------------------------------
