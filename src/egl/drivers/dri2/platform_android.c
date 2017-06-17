@@ -1034,13 +1034,6 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
       { HAL_PIXEL_FORMAT_RGB_565,   { 0x0000f800, 0x000007e0, 0x0000001f, 0x00000000 } },
       { HAL_PIXEL_FORMAT_BGRA_8888, { 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000 } },
    };
-   EGLint config_attrs[] = {
-     EGL_NATIVE_VISUAL_ID,   0,
-     EGL_NATIVE_VISUAL_TYPE, 0,
-     EGL_FRAMEBUFFER_TARGET_ANDROID, EGL_TRUE,
-     EGL_RECORDABLE_ANDROID, EGL_TRUE,
-     EGL_NONE
-   };
 
    unsigned int format_count[ARRAY_SIZE(visuals)] = { 0 };
    int count = 0;
@@ -1049,8 +1042,13 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
       const EGLint surface_type = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;
 
       for (int j = 0; j < ARRAY_SIZE(visuals); j++) {
-         config_attrs[1] = visuals[j].format;
-         config_attrs[3] = visuals[j].format;
+         const EGLint config_attrs[] = {
+           EGL_NATIVE_VISUAL_ID,   visuals[j].format,
+           EGL_NATIVE_VISUAL_TYPE, visuals[j].format,
+           EGL_FRAMEBUFFER_TARGET_ANDROID, EGL_TRUE,
+           EGL_RECORDABLE_ANDROID, EGL_TRUE,
+           EGL_NONE
+         };
 
          struct dri2_egl_config *dri2_conf =
              dri2_add_config(dpy, dri2_dpy->driver_configs[i], count + 1,
