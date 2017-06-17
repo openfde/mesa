@@ -1036,7 +1036,7 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
    };
 
    unsigned int format_count[ARRAY_SIZE(visuals)] = { 0 };
-   int count = 0;
+   int config_count = 0;
 
    for (int i = 0; dri2_dpy->driver_configs[i]; i++) {
       const EGLint surface_type = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;
@@ -1051,11 +1051,11 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
          };
 
          struct dri2_egl_config *dri2_conf =
-             dri2_add_config(dpy, dri2_dpy->driver_configs[i], count + 1,
-                             surface_type, config_attrs,
+             dri2_add_config(dpy, dri2_dpy->driver_configs[i],
+                             config_count + 1, surface_type, config_attrs,
                              visuals[j].rgba_masks);
          if (dri2_conf) {
-            count++;
+            config_count++;
             format_count[j]++;
          }
       }
@@ -1068,7 +1068,7 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
       }
    }
 
-   return (count != 0);
+   return (config_count != 0);
 }
 
 static int
