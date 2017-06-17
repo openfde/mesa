@@ -1035,12 +1035,11 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
       { HAL_PIXEL_FORMAT_BGRA_8888, { 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000 } },
    };
 
+   const EGLint surface_type = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;
    unsigned int format_count[ARRAY_SIZE(visuals)] = { 0 };
    int config_count = 0;
 
    for (int i = 0; dri2_dpy->driver_configs[i]; i++) {
-      const EGLint surface_type = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;
-
       for (int j = 0; j < ARRAY_SIZE(visuals); j++) {
          const EGLint config_attrs[] = {
            EGL_NATIVE_VISUAL_ID,   visuals[j].format,
