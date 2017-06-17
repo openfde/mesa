@@ -1039,23 +1039,41 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
    unsigned int format_count[ARRAY_SIZE(visuals)] = { 0 };
    int config_count = 0;
 
-   for (int i = 0; dri2_dpy->driver_configs[i]; i++) {
-      for (int j = 0; j < ARRAY_SIZE(visuals); j++) {
+   /* The nesting of loops is significant here. Also significant is the order
+    * of the HAL pixel formats. Many Android apps (such as Google's official
+    * NDK GLES2 example app), and even portions the core framework code (such
+    * as SystemServiceManager in Nougat), incorrectly choose their EGLConfig.
+    * They neglect to match the EGLConfig's EGL_NATIVE_VISUAL_ID against the
+    * window's native format, and instead choose the first EGLConfig whose
+    * channel sizes match those of the native window format while ignoring the
+    * channel *ordering*.
+    *
+    * We can detect such buggy clients in logcat when they call
+    * eglCreateSurface, by detecting the mismatch between the EGLConfig's
+    * format and the window's format.
+    *
+    * As a workaround, we generate EGLConfigs such that all EGLConfigs for HAL
+    * pixel format i precede those for HAL pixel format i+1. In my
+    * (chadversary) testing on Android Nougat, this was good enough to pacify
+    * the buggy clients.
+    */
+   for (int i = 0; i < ARRAY_SIZE(visuals); i++) {
+      for (int j = 0; dri2_dpy->driver_configs[j]; j++) {
          const EGLint config_attrs[] = {
-           EGL_NATIVE_VISUAL_ID,   visuals[j].format,
-           EGL_NATIVE_VISUAL_TYPE, visuals[j].format,
+           EGL_NATIVE_VISUAL_ID,   visuals[i].format,
+           EGL_NATIVE_VISUAL_TYPE, visuals[i].format,
            EGL_FRAMEBUFFER_TARGET_ANDROID, EGL_TRUE,
            EGL_RECORDABLE_ANDROID, EGL_TRUE,
            EGL_NONE
          };
 
          struct dri2_egl_config *dri2_conf =
-             dri2_add_config(dpy, dri2_dpy->driver_configs[i],
+             dri2_add_config(dpy, dri2_dpy->driver_configs[j],
                              config_count + 1, surface_type, config_attrs,
-                             visuals[j].rgba_masks);
+                             visuals[i].rgba_masks);
          if (dri2_conf) {
             config_count++;
-            format_count[j]++;
+            format_count[i]++;
          }
       }
    }
