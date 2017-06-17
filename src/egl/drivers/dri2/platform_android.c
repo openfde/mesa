@@ -64,9 +64,7 @@ static const struct droid_yuv_format droid_yuv_formats[] = {
 static int
 get_fourcc_yuv(int native, int is_ycrcb, int chroma_step)
 {
-   int i;
-
-   for (i = 0; i < ARRAY_SIZE(droid_yuv_formats); ++i)
+   for (int i = 0; i < ARRAY_SIZE(droid_yuv_formats); ++i)
       if (droid_yuv_formats[i].native == native &&
           droid_yuv_formats[i].is_ycrcb == is_ycrcb &&
           droid_yuv_formats[i].chroma_step == chroma_step)
@@ -78,9 +76,7 @@ get_fourcc_yuv(int native, int is_ycrcb, int chroma_step)
 static bool
 is_yuv(int native)
 {
-   int i;
-
-   for (i = 0; i < ARRAY_SIZE(droid_yuv_formats); ++i)
+   for (int i = 0; i < ARRAY_SIZE(droid_yuv_formats); ++i)
       if (droid_yuv_formats[i].native == native)
          return true;
 
@@ -299,9 +295,8 @@ droid_free_local_buffers(struct dri2_egl_surface *dri2_surf)
 {
    struct dri2_egl_display *dri2_dpy =
       dri2_egl_display(dri2_surf->base.Resource.Display);
-   int i;
 
-   for (i = 0; i < ARRAY_SIZE(dri2_surf->local_buffers); i++) {
+   for (int i = 0; i < ARRAY_SIZE(dri2_surf->local_buffers); i++) {
       if (dri2_surf->local_buffers[i]) {
          dri2_dpy->dri2->releaseBuffer(dri2_dpy->dri_screen,
                dri2_surf->local_buffers[i]);
@@ -951,10 +946,10 @@ static int
 droid_get_buffers_parse_attachments(struct dri2_egl_surface *dri2_surf,
                                     unsigned int *attachments, int count)
 {
-   int num_buffers = 0, i;
+   int num_buffers = 0;
 
    /* fill dri2_surf->buffers */
-   for (i = 0; i < count * 2; i += 2) {
+   for (int i = 0; i < count * 2; i += 2) {
       __DRIbuffer *buf, *local;
 
       assert(num_buffers < ARRAY_SIZE(dri2_surf->buffers));
@@ -1046,20 +1041,21 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
      EGL_RECORDABLE_ANDROID, EGL_TRUE,
      EGL_NONE
    };
+
    unsigned int format_count[ARRAY_SIZE(visuals)] = { 0 };
-   int count, i, j;
+   int count = 0;
 
-   count = 0;
-   for (i = 0; dri2_dpy->driver_configs[i]; i++) {
+   for (int i = 0; dri2_dpy->driver_configs[i]; i++) {
       const EGLint surface_type = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;
-      struct dri2_egl_config *dri2_conf;
 
-      for (j = 0; j < ARRAY_SIZE(visuals); j++) {
+      for (int j = 0; j < ARRAY_SIZE(visuals); j++) {
          config_attrs[1] = visuals[j].format;
          config_attrs[3] = visuals[j].format;
 
-         dri2_conf = dri2_add_config(dpy, dri2_dpy->driver_configs[i],
-               count + 1, surface_type, config_attrs, visuals[j].rgba_masks);
+         struct dri2_egl_config *dri2_conf =
+             dri2_add_config(dpy, dri2_dpy->driver_configs[i], count + 1,
+                             surface_type, config_attrs,
+                             visuals[j].rgba_masks);
          if (dri2_conf) {
             count++;
             format_count[j]++;
@@ -1067,7 +1063,7 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
       }
    }
 
-   for (i = 0; i < ARRAY_SIZE(format_count); i++) {
+   for (int i = 0; i < ARRAY_SIZE(format_count); i++) {
       if (!format_count[i]) {
          _eglLog(_EGL_DEBUG, "No DRI config supports native format 0x%x",
                  visuals[i].format);
