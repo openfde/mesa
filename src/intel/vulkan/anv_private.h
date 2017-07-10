@@ -41,6 +41,10 @@
 #define VG(x)
 #endif
 
+#ifdef ANDROID
+#include <cutils/log.h>
+#endif
+
 #include "common/gen_clflush.h"
 #include "common/gen_device_info.h"
 #include "blorp/blorp.h"
@@ -72,6 +76,7 @@ struct gen_l3_config;
 #include "isl/isl.h"
 
 #include "common/gen_debug.h"
+#include "common/intel_log.h"
 #include "wsi_common.h"
 
 /* Allowing different clear colors requires us to perform a depth resolve at
@@ -101,8 +106,6 @@ struct gen_l3_config;
 
 #define ANV_SVGS_VB_INDEX    MAX_VBS
 #define ANV_DRAWID_VB_INDEX (MAX_VBS + 1)
-
-#define anv_printflike(a, b) __attribute__((__format__(__printf__, a, b)))
 
 static inline uint32_t
 align_down_npot_u32(uint32_t v, uint32_t a)
@@ -205,11 +208,9 @@ VkResult __vk_errorf(VkResult error, const char *file, int line, const char *for
 #ifdef DEBUG
 #define vk_error(error) __vk_errorf(error, __FILE__, __LINE__, NULL);
 #define vk_errorf(error, format, ...) __vk_errorf(error, __FILE__, __LINE__, format, ## __VA_ARGS__);
-#define anv_debug(format, ...) fprintf(stderr, "debug: " format, ##__VA_ARGS__)
 #else
 #define vk_error(error) error
 #define vk_errorf(error, format, ...) error
-#define anv_debug(format, ...)
 #endif
 
 /**
@@ -228,14 +229,7 @@ VkResult __vk_errorf(VkResult error, const char *file, int line, const char *for
  *    defined by extensions supported by that component.
  */
 #define anv_debug_ignored_stype(sType) \
-   anv_debug("debug: %s: ignored VkStructureType %u\n", __func__, (sType))
-
-void __anv_finishme(const char *file, int line, const char *format, ...)
-   anv_printflike(3, 4);
-void __anv_perf_warn(const char *file, int line, const char *format, ...)
-   anv_printflike(3, 4);
-void anv_loge(const char *format, ...) anv_printflike(1, 2);
-void anv_loge_v(const char *format, va_list va);
+   intel_logd("%s: ignored VkStructureType %u", __func__, (sType))
 
 /**
  * Print a FINISHME message, including its source location.
@@ -244,7 +238,8 @@ void anv_loge_v(const char *format, va_list va);
    do { \
       static bool reported = false; \
       if (!reported) { \
-         __anv_finishme(__FILE__, __LINE__, format, ##__VA_ARGS__); \
+         intel_logw("%s:%d: FINISHME: " format, __FILE__, __LINE__, \
+                    ##__VA_ARGS__); \
          reported = true; \
       } \
    } while (0)
@@ -256,7 +251,8 @@ void anv_loge_v(const char *format, va_list va);
    do { \
       static bool reported = false; \
       if (!reported && unlikely(INTEL_DEBUG & DEBUG_PERF)) { \
-         __anv_perf_warn(__FILE__, __LINE__, format, ##__VA_ARGS__); \
+         intel_logw("%s:%d: PERF: " format, __FILE__, __LINE__, \
+                    ##__VA_ARGS__); \
          reported = true; \
       } \
    } while (0)
@@ -265,7 +261,7 @@ void anv_loge_v(const char *format, va_list va);
 #ifdef DEBUG
 #define anv_assert(x) ({ \
    if (unlikely(!(x))) \
-      fprintf(stderr, "%s:%d ASSERT: %s\n", __FILE__, __LINE__, #x); \
+      intel_loge("%s:%d ASSERT: %s", __FILE__, __LINE__, #x); \
 })
 #else
 #define anv_assert(x)

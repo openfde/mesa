@@ -32,52 +32,6 @@
 #include "vk_enum_to_str.h"
 #include "util/debug.h"
 
-/** Log an error message.  */
-void anv_printflike(1, 2)
-anv_loge(const char *format, ...)
-{
-   va_list va;
-
-   va_start(va, format);
-   anv_loge_v(format, va);
-   va_end(va);
-}
-
-/** \see anv_loge() */
-void
-anv_loge_v(const char *format, va_list va)
-{
-   fprintf(stderr, "vk: error: ");
-   vfprintf(stderr, format, va);
-   fprintf(stderr, "\n");
-}
-
-void anv_printflike(3, 4)
-__anv_finishme(const char *file, int line, const char *format, ...)
-{
-   va_list ap;
-   char buffer[256];
-
-   va_start(ap, format);
-   vsnprintf(buffer, sizeof(buffer), format, ap);
-   va_end(ap);
-
-   fprintf(stderr, "%s:%d: FINISHME: %s\n", file, line, buffer);
-}
-
-void anv_printflike(3, 4)
-__anv_perf_warn(const char *file, int line, const char *format, ...)
-{
-   va_list ap;
-   char buffer[256];
-
-   va_start(ap, format);
-   vsnprintf(buffer, sizeof(buffer), format, ap);
-   va_end(ap);
-
-   fprintf(stderr, "%s:%d: PERF: %s\n", file, line, buffer);
-}
-
 VkResult
 __vk_errorf(VkResult error, const char *file, int line, const char *format, ...)
 {
@@ -91,9 +45,9 @@ __vk_errorf(VkResult error, const char *file, int line, const char *format, ...)
       vsnprintf(buffer, sizeof(buffer), format, ap);
       va_end(ap);
 
-      fprintf(stderr, "%s:%d: %s (%s)\n", file, line, buffer, error_str);
+      intel_loge("%s:%d: %s (%s)", file, line, buffer, error_str);
    } else {
-      fprintf(stderr, "%s:%d: %s\n", file, line, error_str);
+      intel_loge("%s:%d: %s", file, line, error_str);
    }
 
    if (error == VK_ERROR_DEVICE_LOST &&
