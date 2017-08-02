@@ -1893,7 +1893,8 @@ _eglClientWaitSyncCommon(_EGLDisplay *disp, EGLDisplay dpy,
     * go into waiting state.
     */
 
-   _eglUnlockDisplay(dpy);
+   if (s->Type == EGL_SYNC_REUSABLE_KHR)
+      _eglUnlockDisplay(dpy);
 
    ret = drv->API.ClientWaitSyncKHR(drv, disp, s, flags, timeout);
 
@@ -1901,7 +1902,10 @@ _eglClientWaitSyncCommon(_EGLDisplay *disp, EGLDisplay dpy,
     * 'disp' is already unlocked for reusable sync type,
     * so passing 'NULL' to bypass unlocking display.
     */
-   RETURN_EGL_EVAL(NULL, ret);
+   if (s->Type == EGL_SYNC_REUSABLE_KHR)
+      RETURN_EGL_EVAL(NULL, ret);
+   else
+      RETURN_EGL_EVAL(disp, ret);
 }
 
 EGLint EGLAPIENTRY
