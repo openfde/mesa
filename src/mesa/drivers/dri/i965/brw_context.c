@@ -841,7 +841,9 @@ brwCreateContext(gl_api api,
    brw->is_cherryview = devinfo->is_cherryview;
    brw->is_broxton = devinfo->is_broxton || devinfo->is_geminilake;
    brw->has_llc = devinfo->has_llc;
-   brw->has_hiz = devinfo->has_hiz_and_separate_stencil;
+   /* Braswell has hiz issues, disable it. */
+   brw->has_hiz = devinfo->has_hiz_and_separate_stencil
+			&& screen->deviceID != 0x22B1;
    brw->has_separate_stencil = devinfo->has_hiz_and_separate_stencil;
    brw->has_pln = devinfo->has_pln;
    brw->has_compr4 = devinfo->has_compr4;
