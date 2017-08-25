@@ -84,7 +84,6 @@ extern uint64_t INTEL_DEBUG;
 #define DEBUG_COLOR               (1ull << 40)
 
 #ifdef HAVE_ANDROID_PLATFORM
-#define LOG_TAG "INTEL-MESA"
 #include <cutils/log.h>
 #ifndef ALOGW
 #define ALOGW LOGW
