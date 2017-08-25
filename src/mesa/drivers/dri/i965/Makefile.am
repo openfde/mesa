@@ -39,6 +39,7 @@ AM_CFLAGS = \
 	-I$(top_builddir)/src/intel \
 	-I$(top_srcdir)/src/intel \
 	-I$(top_srcdir)/include/drm-uapi \
+	-DLOG_TAG=\"INTEL-MESA\" \
 	$(DEFINES) \
 	$(VISIBILITY_CFLAGS) \
 	$(WNO_OVERRIDE_INIT) \
