@@ -31,6 +31,8 @@ LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 
 LOCAL_SRC_FILES := $(BLORP_FILES)
 
+LOCAL_CFLAGS := -DLOG_TAG=\"INTEL-MESA\"
+
 LOCAL_C_INCLUDES := \
 	$(call generated-sources-dir-for,STATIC_LIBRARIES,libmesa_nir,,)/nir \
 	$(MESA_TOP)/src/gallium/auxiliary \

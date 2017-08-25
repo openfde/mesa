@@ -40,7 +40,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/gallium/include \
 	$(VALGRIND_CFLAGS) \
 	$(LIBDRM_CFLAGS) \
-	$(DEFINES)
+	$(DEFINES) \
+	-DLOG_TAG=\"INTEL-MESA\"
 
 AM_CFLAGS = \
 	$(VISIBILITY_CFLAGS) \
