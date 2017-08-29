@@ -589,6 +589,12 @@ struct anv_bo_cache {
 enum anv_bo_cache_import_bits {
    /** Do not close the fd after import. */
    ANV_BO_CACHE_IMPORT_NO_CLOSE_FD = (1 << 0),
+
+   /**
+    * Ignore the anv_bo_cache_import::size parameter. Instead, on a cache hit,
+    * use the cached bo's size; on a cache miss, query the fd's size.
+    */
+   ANV_BO_CACHE_IMPORT_IGNORE_SIZE_PARAM = (1 << 1),
 };
 typedef uint32_t anv_bo_cache_import_flags_t;
 

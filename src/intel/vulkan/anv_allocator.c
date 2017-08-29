@@ -1277,7 +1277,8 @@ anv_bo_cache_import(struct anv_device *device,
    pthread_mutex_lock(&cache->mutex);
 
    /* The kernel is going to give us whole pages anyway */
-   size = align_u64(size, 4096);
+   if (!(flags & ANV_BO_CACHE_IMPORT_IGNORE_SIZE_PARAM))
+      size = align_u64(size, 4096);
 
    uint32_t gem_handle = anv_gem_fd_to_handle(device, fd);
    if (!gem_handle) {
@@ -1287,6 +1288,9 @@ anv_bo_cache_import(struct anv_device *device,
 
    struct anv_cached_bo *bo = anv_bo_cache_lookup_locked(cache, gem_handle);
    if (bo) {
+      if (flags & ANV_BO_CACHE_IMPORT_IGNORE_SIZE_PARAM)
+         size = bo->bo.size;
+
       if (bo->bo.size != size) {
          pthread_mutex_unlock(&cache->mutex);
          return vk_error(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR);
@@ -1302,6 +1306,9 @@ anv_bo_cache_import(struct anv_device *device,
        * this sort of attack but only if it can trust the buffer size.
        */
       off_t import_size = lseek(fd, 0, SEEK_END);
+      if (flags & ANV_BO_CACHE_IMPORT_IGNORE_SIZE_PARAM)
+         size = import_size;
+
       if (import_size == (off_t)-1 || import_size != size) {
          anv_gem_close(device, gem_handle);
          pthread_mutex_unlock(&cache->mutex);
