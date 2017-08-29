@@ -451,8 +451,12 @@ anv_image_create(VkDevice _device,
    return VK_SUCCESS;
 
 fail:
-   if (image)
+   if (image) {
+      if (image->bo && image->bo_is_owned)
+         anv_bo_cache_release(device, &device->bo_cache, image->bo);
+
       vk_free2(&device->alloc, alloc, image);
+   }
 
    return r;
 }
@@ -480,6 +484,9 @@ anv_DestroyImage(VkDevice _device, VkImage _image,
 
    if (!image)
       return;
+
+   if (image->bo && image->bo_is_owned)
+      anv_bo_cache_release(device, &device->bo_cache, image->bo);
 
    vk_free2(&device->alloc, pAllocator, image);
 }
