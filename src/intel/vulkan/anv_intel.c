@@ -52,7 +52,7 @@ VkResult anv_CreateDmaBufImageINTEL(
    uint64_t size = (uint64_t)pCreateInfo->strideInBytes * pCreateInfo->extent.height;
 
    result = anv_bo_cache_import(device, &device->bo_cache,
-                                pCreateInfo->fd, size, &mem->bo);
+                                pCreateInfo->fd, size, 0, &mem->bo);
    if (result != VK_SUCCESS)
       goto fail;
 

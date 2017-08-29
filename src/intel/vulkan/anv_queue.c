@@ -1031,7 +1031,7 @@ VkResult anv_ImportSemaphoreFdKHR(
          new_impl.type = ANV_SEMAPHORE_TYPE_BO;
 
          VkResult result = anv_bo_cache_import(device, &device->bo_cache,
-                                               fd, 4096, &new_impl.bo);
+                                               fd, 4096, 0, &new_impl.bo);
          if (result != VK_SUCCESS)
             return result;
 

@@ -1270,7 +1270,9 @@ anv_bo_cache_alloc(struct anv_device *device,
 VkResult
 anv_bo_cache_import(struct anv_device *device,
                     struct anv_bo_cache *cache,
-                    int fd, uint64_t size, struct anv_bo **bo_out)
+                    int fd, uint64_t size,
+                    anv_bo_cache_import_flags_t flags,
+                    struct anv_bo **bo_out)
 {
    pthread_mutex_lock(&cache->mutex);
 
@@ -1323,16 +1325,18 @@ anv_bo_cache_import(struct anv_device *device,
 
    pthread_mutex_unlock(&cache->mutex);
 
-   /* From the Vulkan spec:
-    *
-    *    "Importing memory from a file descriptor transfers ownership of
-    *    the file descriptor from the application to the Vulkan
-    *    implementation. The application must not perform any operations on
-    *    the file descriptor after a successful import."
-    *
-    * If the import fails, we leave the file descriptor open.
-    */
-   close(fd);
+   if (!(flags & ANV_BO_CACHE_IMPORT_NO_CLOSE_FD)) {
+      /* From the Vulkan spec:
+       *
+       *    "Importing memory from a file descriptor transfers ownership of
+       *    the file descriptor from the application to the Vulkan
+       *    implementation. The application must not perform any operations on
+       *    the file descriptor after a successful import."
+       *
+       * If the import fails, we leave the file descriptor open.
+       */
+      close(fd);
+   }
 
    *bo_out = &bo->bo;
 

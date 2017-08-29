@@ -586,6 +586,12 @@ struct anv_bo_cache {
    pthread_mutex_t mutex;
 };
 
+enum anv_bo_cache_import_bits {
+   /** Do not close the fd after import. */
+   ANV_BO_CACHE_IMPORT_NO_CLOSE_FD = (1 << 0),
+};
+typedef uint32_t anv_bo_cache_import_flags_t;
+
 VkResult anv_bo_cache_init(struct anv_bo_cache *cache);
 void anv_bo_cache_finish(struct anv_bo_cache *cache);
 VkResult anv_bo_cache_alloc(struct anv_device *device,
@@ -593,7 +599,9 @@ VkResult anv_bo_cache_alloc(struct anv_device *device,
                             uint64_t size, struct anv_bo **bo);
 VkResult anv_bo_cache_import(struct anv_device *device,
                              struct anv_bo_cache *cache,
-                             int fd, uint64_t size, struct anv_bo **bo);
+                             int fd, uint64_t size,
+                             anv_bo_cache_import_flags_t flags,
+                             struct anv_bo **bo);
 VkResult anv_bo_cache_export(struct anv_device *device,
                              struct anv_bo_cache *cache,
                              struct anv_bo *bo_in, int *fd_out);

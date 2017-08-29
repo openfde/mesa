@@ -1482,7 +1482,7 @@ VkResult anv_AllocateMemory(
 
       result = anv_bo_cache_import(device, &device->bo_cache,
                                    fd_info->fd, pAllocateInfo->allocationSize,
-                                   &mem->bo);
+                                   0, &mem->bo);
       if (result != VK_SUCCESS)
          goto fail;
    } else {
