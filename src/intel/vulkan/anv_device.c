@@ -207,7 +207,17 @@ anv_physical_device_init_heaps(struct anv_physical_device *device, int fd)
 static VkResult
 anv_physical_device_init_uuids(struct anv_physical_device *device)
 {
-   const struct build_id_note *note = build_id_find_nhdr("libvulkan_intel.so");
+#ifdef ANDROID /* HACK(chadv) */
+   /* FINISHME(chadv): Stop searching for ELF headers based on hard-coded
+    * library names. Intead, try comparing this function's address against the
+    * virtual address ranges listed in the ELF header.
+    */
+   const char *lib_filename = "vulkan.cheets.so";
+#else
+   const char *lib_filename = "libvulkan_intel.so";
+#endif
+
+   const struct build_id_note *note = build_id_find_nhdr(lib_filename);
    if (!note) {
       return vk_errorf(VK_ERROR_INITIALIZATION_FAILED,
                        "Failed to find build-id");
