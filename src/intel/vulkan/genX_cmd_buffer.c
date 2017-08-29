@@ -186,13 +186,13 @@ add_image_relocs(struct anv_cmd_buffer * const cmd_buffer,
                  const struct anv_state state)
 {
    const struct isl_device *isl_dev = &cmd_buffer->device->isl_dev;
-   const uint32_t surf_offset = image->offset +
+   const uint32_t surf_offset = image->mem_offset +
       anv_image_get_surface_for_aspect_mask(image, aspect_mask)->offset;
 
-   add_surface_state_reloc(cmd_buffer, state, image->bo, surf_offset);
+   add_surface_state_reloc(cmd_buffer, state, image->mem->bo, surf_offset);
 
    if (aux_usage != ISL_AUX_USAGE_NONE) {
-      uint32_t aux_offset = image->offset + image->aux_surface.offset;
+      uint32_t aux_offset = image->mem_offset + image->aux_surface.offset;
 
       /* On gen7 and prior, the bottom 12 bits of the MCS base address are
        * used to store other information.  This should be ok, however, because
@@ -206,7 +206,7 @@ add_image_relocs(struct anv_cmd_buffer * const cmd_buffer,
          anv_reloc_list_add(&cmd_buffer->surface_relocs,
                             &cmd_buffer->pool->alloc,
                             state.offset + isl_dev->ss.aux_addr_offset,
-                            image->bo, aux_offset);
+                            image->mem->bo, aux_offset);
       if (result != VK_SUCCESS)
          anv_batch_set_error(&cmd_buffer->batch, result);
    }
@@ -420,7 +420,7 @@ get_fast_clear_state_offset(const struct anv_device *device,
    assert(device && image);
    assert(image->aspects == VK_IMAGE_ASPECT_COLOR_BIT);
    assert(level < anv_image_aux_levels(image));
-   uint32_t offset = image->offset + image->aux_surface.offset +
+   uint32_t offset = image->mem_offset + image->aux_surface.offset +
                      image->aux_surface.isl.size +
                      anv_fast_clear_state_entry_size(device) * level;
 
@@ -432,7 +432,7 @@ get_fast_clear_state_offset(const struct anv_device *device,
       break;
    }
 
-   assert(offset < image->offset + image->size);
+   assert(offset < image->mem_offset + image->size);
    return offset;
 }
 
@@ -460,7 +460,7 @@ genX(set_image_needs_resolve)(struct anv_cmd_buffer *cmd_buffer,
     * issues in testing is currently being used in the GL driver.
     */
    anv_batch_emit(&cmd_buffer->batch, GENX(MI_STORE_DATA_IMM), sdi) {
-      sdi.Address = (struct anv_address) { image->bo, resolve_flag_offset };
+      sdi.Address = (struct anv_address) { image->mem->bo, resolve_flag_offset };
       sdi.ImmediateData = needs_resolve;
    }
 }
@@ -485,7 +485,7 @@ genX(load_needs_resolve_predicate)(struct anv_cmd_buffer *cmd_buffer,
    emit_lri(&cmd_buffer->batch, MI_PREDICATE_SRC1 + 4, 0);
    emit_lri(&cmd_buffer->batch, MI_PREDICATE_SRC0    , 0);
    emit_lrm(&cmd_buffer->batch, MI_PREDICATE_SRC0 + 4,
-            image->bo, resolve_flag_offset);
+            image->mem->bo, resolve_flag_offset);
    anv_batch_emit(&cmd_buffer->batch, GENX(MI_PREDICATE), mip) {
       mip.LoadOperation    = LOAD_LOADINV;
       mip.CombineOperation = COMBINE_SET;
@@ -528,7 +528,7 @@ init_fast_clear_state_entry(struct anv_cmd_buffer *cmd_buffer,
          const uint32_t entry_offset =
             get_fast_clear_state_offset(cmd_buffer->device, image, level,
                                         FAST_CLEAR_STATE_FIELD_CLEAR_COLOR);
-         sdi.Address = (struct anv_address) { image->bo, entry_offset + i };
+         sdi.Address = (struct anv_address) { image->mem->bo, entry_offset + i };
 
          if (GEN_GEN >= 9) {
             /* MCS buffers on SKL+ can only have 1/0 clear colors. */
@@ -579,11 +579,11 @@ genX(copy_fast_clear_dwords)(struct anv_cmd_buffer *cmd_buffer,
    unsigned copy_size = cmd_buffer->device->isl_dev.ss.clear_value_size;
 
    if (copy_from_surface_state) {
-      genX(cmd_buffer_mi_memcpy)(cmd_buffer, image->bo, entry_offset,
+      genX(cmd_buffer_mi_memcpy)(cmd_buffer, image->mem->bo, entry_offset,
                                  ss_bo, ss_clear_offset, copy_size);
    } else {
       genX(cmd_buffer_mi_memcpy)(cmd_buffer, ss_bo, ss_clear_offset,
-                                 image->bo, entry_offset, copy_size);
+                                 image->mem->bo, entry_offset, copy_size);
 
       /* Updating a surface state object may require that the state cache be
        * invalidated. From the SKL PRM, Shared Functions -> State -> State
@@ -2765,8 +2765,8 @@ cmd_buffer_emit_depth_stencil(struct anv_cmd_buffer *cmd_buffer)
       info.depth_address =
          anv_batch_emit_reloc(&cmd_buffer->batch,
                               dw + device->isl_dev.ds.depth_offset / 4,
-                              image->bo,
-                              image->offset + image->depth_surface.offset);
+                              image->mem->bo,
+                              image->mem_offset + image->depth_surface.offset);
 
       const uint32_t ds =
          cmd_buffer->state.subpass->depth_stencil_attachment.attachment;
@@ -2777,8 +2777,8 @@ cmd_buffer_emit_depth_stencil(struct anv_cmd_buffer *cmd_buffer)
          info.hiz_address =
             anv_batch_emit_reloc(&cmd_buffer->batch,
                                  dw + device->isl_dev.ds.hiz_offset / 4,
-                                 image->bo,
-                                 image->offset + image->aux_surface.offset);
+                                 image->mem->bo,
+                                 image->mem_offset + image->aux_surface.offset);
 
          info.depth_clear_value = ANV_HZ_FC_VAL;
       }
@@ -2790,8 +2790,8 @@ cmd_buffer_emit_depth_stencil(struct anv_cmd_buffer *cmd_buffer)
       info.stencil_address =
          anv_batch_emit_reloc(&cmd_buffer->batch,
                               dw + device->isl_dev.ds.stencil_offset / 4,
-                              image->bo,
-                              image->offset + image->stencil_surface.offset);
+                              image->mem->bo,
+                              image->mem_offset + image->stencil_surface.offset);
    }
 
    isl_emit_depth_stencil_hiz_s(&device->isl_dev, dw, &info);

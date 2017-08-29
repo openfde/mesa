@@ -191,16 +191,16 @@ get_blorp_surf_for_anv_image(const struct anv_image *image,
    *blorp_surf = (struct blorp_surf) {
       .surf = &surface->isl,
       .addr = {
-         .buffer = image->bo,
-         .offset = image->offset + surface->offset,
+         .buffer = image->mem->bo,
+         .offset = image->mem_offset + surface->offset,
       },
    };
 
    if (aux_usage != ISL_AUX_USAGE_NONE) {
       blorp_surf->aux_surf = &image->aux_surface.isl,
       blorp_surf->aux_addr = (struct blorp_address) {
-         .buffer = image->bo,
-         .offset = image->offset + image->aux_surface.offset,
+         .buffer = image->mem->bo,
+         .offset = image->mem_offset + image->aux_surface.offset,
       };
       blorp_surf->aux_usage = aux_usage;
    }
@@ -1515,8 +1515,8 @@ anv_gen8_hiz_op_resolve(struct anv_cmd_buffer *cmd_buffer,
    /* Manually add the aux HiZ surf */
    surf.aux_surf = &image->aux_surface.isl,
    surf.aux_addr = (struct blorp_address) {
-      .buffer = image->bo,
-      .offset = image->offset + image->aux_surface.offset,
+      .buffer = image->mem->bo,
+      .offset = image->mem_offset + image->aux_surface.offset,
    };
    surf.aux_usage = ISL_AUX_USAGE_HIZ;
 

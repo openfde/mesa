@@ -265,7 +265,7 @@ anv_wsi_image_create(VkDevice device_h,
    *memory_p = memory_h;
    *fd_p = fd;
    *size = image->size;
-   *offset = image->offset;
+   *offset = image->mem_offset;
    return VK_SUCCESS;
 fail_alloc_memory:
    anv_FreeMemory(device_h, memory_h, pAllocator);

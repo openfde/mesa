@@ -2086,8 +2086,8 @@ struct anv_image {
    uint32_t alignment;
 
    /* Set when bound */
-   struct anv_bo *bo;
-   VkDeviceSize offset;
+   struct anv_device_memory *mem;
+   VkDeviceSize mem_offset;
 
    /**
     * Image subsurfaces

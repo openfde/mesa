@@ -493,13 +493,13 @@ VkResult anv_BindImageMemory(
    ANV_FROM_HANDLE(anv_image, image, _image);
 
    if (mem == NULL) {
-      image->bo = NULL;
-      image->offset = 0;
+      image->mem = NULL;
+      image->mem_offset = 0;
       return VK_SUCCESS;
    }
 
-   image->bo = mem->bo;
-   image->offset = memoryOffset;
+   image->mem = mem;
+   image->mem_offset = memoryOffset;
 
    return VK_SUCCESS;
 }
@@ -757,8 +757,8 @@ anv_CreateImageView(VkDevice _device,
       anv_image_get_surface_for_aspect_mask(image, range->aspectMask);
 
    iview->image = image;
-   iview->bo = image->bo;
-   iview->offset = image->offset + surface->offset;
+   iview->bo = image->mem->bo;
+   iview->offset = image->mem_offset + surface->offset;
 
    iview->aspect_mask = pCreateInfo->subresourceRange.aspectMask;
    iview->vk_format = pCreateInfo->format;
