@@ -2089,6 +2089,9 @@ struct anv_image {
    struct anv_device_memory *mem;
    VkDeviceSize mem_offset;
 
+   /** When destroying the image, also free its device memory. */
+   bool mem_is_owned;
+
    /**
     * Image subsurfaces
     *

@@ -450,6 +450,9 @@ anv_image_create(VkDevice _device,
    return VK_SUCCESS;
 
 fail:
+   if (image && image->mem_is_owned)
+      anv_FreeMemory(_device, anv_device_memory_to_handle(image->mem), alloc);
+
    if (image)
       vk_free2(&device->alloc, alloc, image);
 
@@ -479,6 +482,11 @@ anv_DestroyImage(VkDevice _device, VkImage _image,
 
    if (!image)
       return;
+
+   if (image->mem_is_owned) {
+      anv_FreeMemory(_device, anv_device_memory_to_handle(image->mem),
+                     pAllocator);
+   }
 
    vk_free2(&device->alloc, pAllocator, image);
 }
