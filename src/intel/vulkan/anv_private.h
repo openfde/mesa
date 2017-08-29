@@ -2241,6 +2241,7 @@ struct anv_image {
    /* Set when bound */
    struct anv_bo *bo;
    VkDeviceSize offset;
+   bool bo_is_owned; /**< When destroying the image, also free its bo. */
 
    /**
     * Image subsurfaces
