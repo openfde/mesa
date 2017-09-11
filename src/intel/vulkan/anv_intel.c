@@ -79,6 +79,8 @@ VkResult anv_CreateDmaBufImageINTEL(
       }},
       pAllocator, &image_h);
 
+   close(pCreateInfo->fd);
+
    image = anv_image_from_handle(image_h);
    image->bo = mem->bo;
    image->offset = 0;
