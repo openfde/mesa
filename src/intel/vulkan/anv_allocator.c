@@ -1269,62 +1269,98 @@ anv_bo_cache_alloc(struct anv_device *device,
    return VK_SUCCESS;
 }
 
+static VkResult
+anv_bo_cache_import_locked(struct anv_device *device,
+                           struct anv_bo_cache *cache,
+                           int fd, struct anv_bo **bo_out)
+{
+   uint32_t gem_handle = anv_gem_fd_to_handle(device, fd);
+   if (!gem_handle)
+      return vk_error(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR);
+
+   struct anv_cached_bo *bo = anv_bo_cache_lookup_locked(cache, gem_handle);
+   if (bo) {
+      __sync_fetch_and_add(&bo->refcount, 1);
+      return VK_SUCCESS;
+   }
+
+   off_t size = lseek(fd, 0, SEEK_END);
+   if (size == (off_t)-1) {
+      anv_gem_close(device, gem_handle);
+      return vk_error(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR);
+   }
+
+   bo = vk_alloc(&device->alloc, sizeof(struct anv_cached_bo), 8,
+                 VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (!bo) {
+      anv_gem_close(device, gem_handle);
+      return vk_error(VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
+
+   bo->refcount = 1;
+   anv_bo_init(&bo->bo, gem_handle, size);
+   _mesa_hash_table_insert(cache->bo_map, (void *)(uintptr_t)gem_handle, bo);
+   *bo_out = &bo->bo;
+
+   return VK_SUCCESS;
+}
+
 VkResult
 anv_bo_cache_import(struct anv_device *device,
                     struct anv_bo_cache *cache,
-                    int fd, uint64_t size, struct anv_bo **bo_out)
+                    int fd, struct anv_bo **bo_out)
 {
+   VkResult result;
+
    pthread_mutex_lock(&cache->mutex);
+   result = anv_bo_cache_import_locked(device, cache, fd, bo_out);
+   pthread_mutex_unlock(&cache->mutex);
+
+   return result;
+}
+
+VkResult
+anv_bo_cache_import_with_size(struct anv_device *device,
+                              struct anv_bo_cache *cache,
+                              int fd, uint64_t size,
+                              struct anv_bo **bo_out)
+{
+   struct anv_bo *bo = NULL;
+   VkResult result;
 
    /* The kernel is going to give us whole pages anyway */
    size = align_u64(size, 4096);
 
-   uint32_t gem_handle = anv_gem_fd_to_handle(device, fd);
-   if (!gem_handle) {
+   pthread_mutex_lock(&cache->mutex);
+
+   result = anv_bo_cache_import_locked(device, cache, fd, &bo);
+   if (result != VK_SUCCESS) {
+      pthread_mutex_unlock(&cache->mutex);
+      return result;
+   }
+
+   /* For security purposes, we reject BO imports where the size does not
+    * match exactly.  This prevents a malicious client from passing a
+    * buffer to a trusted client, lying about the size, and telling the
+    * trusted client to try and texture from an image that goes
+    * out-of-bounds.  This sort of thing could lead to GPU hangs or worse
+    * in the trusted client.  The trusted client can protect itself against
+    * this sort of attack but only if it can trust the buffer size.
+    *
+    * To successfully prevent that attack, we must check the fd's size and
+    * complete the fd's import into the cache during the same critical
+    * section.  Otherwise, if the cache were unlocked between importing the fd
+    * and checking the its size, then the attacker could exploit a race by
+    * importing the fd concurrently in separate threads.
+    */
+   if (bo->size != size) {
+      anv_bo_cache_release(device, cache, bo);
       pthread_mutex_unlock(&cache->mutex);
       return vk_error(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR);
    }
 
-   struct anv_cached_bo *bo = anv_bo_cache_lookup_locked(cache, gem_handle);
-   if (bo) {
-      if (bo->bo.size != size) {
-         pthread_mutex_unlock(&cache->mutex);
-         return vk_error(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR);
-      }
-      __sync_fetch_and_add(&bo->refcount, 1);
-   } else {
-      /* For security purposes, we reject BO imports where the size does not
-       * match exactly.  This prevents a malicious client from passing a
-       * buffer to a trusted client, lying about the size, and telling the
-       * trusted client to try and texture from an image that goes
-       * out-of-bounds.  This sort of thing could lead to GPU hangs or worse
-       * in the trusted client.  The trusted client can protect itself against
-       * this sort of attack but only if it can trust the buffer size.
-       */
-      off_t import_size = lseek(fd, 0, SEEK_END);
-      if (import_size == (off_t)-1 || import_size < size) {
-         anv_gem_close(device, gem_handle);
-         pthread_mutex_unlock(&cache->mutex);
-         return vk_error(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR);
-      }
-
-      bo = vk_alloc(&device->alloc, sizeof(struct anv_cached_bo), 8,
-                    VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-      if (!bo) {
-         anv_gem_close(device, gem_handle);
-         pthread_mutex_unlock(&cache->mutex);
-         return vk_error(VK_ERROR_OUT_OF_HOST_MEMORY);
-      }
-
-      bo->refcount = 1;
-
-      anv_bo_init(&bo->bo, gem_handle, size);
-
-      _mesa_hash_table_insert(cache->bo_map, (void *)(uintptr_t)gem_handle, bo);
-   }
-
    pthread_mutex_unlock(&cache->mutex);
-   *bo_out = &bo->bo;
+   *bo_out = bo;
 
    return VK_SUCCESS;
 }
