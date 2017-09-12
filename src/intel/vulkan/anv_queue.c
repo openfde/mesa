@@ -1006,6 +1006,7 @@ VkResult anv_ImportSemaphoreFdKHR(
    ANV_FROM_HANDLE(anv_device, device, _device);
    ANV_FROM_HANDLE(anv_semaphore, semaphore, pImportSemaphoreFdInfo->semaphore);
    int fd = pImportSemaphoreFdInfo->fd;
+   VkResult result;
 
    struct anv_semaphore_impl new_impl = {
       .type = ANV_SEMAPHORE_TYPE_NONE,
@@ -1033,8 +1034,8 @@ VkResult anv_ImportSemaphoreFdKHR(
       } else {
          new_impl.type = ANV_SEMAPHORE_TYPE_BO;
 
-         VkResult result = anv_bo_cache_import(device, &device->bo_cache,
-                                               fd, 4096, &new_impl.bo);
+         result = anv_bo_cache_import_with_size(device, &device->bo_cache, fd,
+                                                4096, &new_impl.bo);
          if (result != VK_SUCCESS)
             return result;
 
