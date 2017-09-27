@@ -37,7 +37,7 @@
 #include "loader.h"
 #include "egl_dri2.h"
 #include "egl_dri2_fallbacks.h"
-#include "gralloc_drm.h"
+#include "platform_android_gralloc_drm.h"
 
 #define ALIGN(val, align)	(((val) + (align) - 1) & ~((align) - 1))
 
@@ -59,6 +59,10 @@ static const struct droid_yuv_format droid_yuv_formats[] = {
    { HAL_PIXEL_FORMAT_YCbCr_420_888,   0, 1, __DRI_IMAGE_FOURCC_YUV420 },
    { HAL_PIXEL_FORMAT_YCbCr_420_888,   1, 1, __DRI_IMAGE_FOURCC_YVU420 },
    { HAL_PIXEL_FORMAT_YV12,            1, 1, __DRI_IMAGE_FOURCC_YVU420 },
+   /* HACK: See droid_create_image_from_prime_fd() and b/32077885. */
+   { HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED,   0, 2, __DRI_IMAGE_FOURCC_NV12 },
+   { HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED,   0, 1, __DRI_IMAGE_FOURCC_YUV420 },
+   { HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED,   1, 1, __DRI_IMAGE_FOURCC_YVU420 },
 };
 
 static int
@@ -90,6 +94,11 @@ get_format_bpp(int native)
 
    switch (native) {
    case HAL_PIXEL_FORMAT_RGBA_8888:
+   case HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED:
+      /*
+       * HACK: Hardcode this to RGBX_8888 as per cros_gralloc hack.
+       * TODO: Remove this once b/32077885 is fixed.
+       */
    case HAL_PIXEL_FORMAT_RGBX_8888:
    case HAL_PIXEL_FORMAT_BGRA_8888:
       bpp = 4;
@@ -112,6 +121,11 @@ static int get_fourcc(int native)
    case HAL_PIXEL_FORMAT_RGB_565:   return __DRI_IMAGE_FOURCC_RGB565;
    case HAL_PIXEL_FORMAT_BGRA_8888: return __DRI_IMAGE_FOURCC_ARGB8888;
    case HAL_PIXEL_FORMAT_RGBA_8888: return __DRI_IMAGE_FOURCC_ABGR8888;
+   case HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED:
+      /*
+       * HACK: Hardcode this to RGBX_8888 as per cros_gralloc hack.
+       * TODO: Remove this once b/32077885 is fixed.
+       */
    case HAL_PIXEL_FORMAT_RGBX_8888: return __DRI_IMAGE_FOURCC_XBGR8888;
    default:
       _eglLog(_EGL_WARNING, "unsupported native buffer format 0x%x", native);
@@ -125,6 +139,11 @@ static int get_format(int format)
    case HAL_PIXEL_FORMAT_BGRA_8888: return __DRI_IMAGE_FORMAT_ARGB8888;
    case HAL_PIXEL_FORMAT_RGB_565:   return __DRI_IMAGE_FORMAT_RGB565;
    case HAL_PIXEL_FORMAT_RGBA_8888: return __DRI_IMAGE_FORMAT_ABGR8888;
+   case HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED:
+      /*
+       * HACK: Hardcode this to RGBX_8888 as per cros_gralloc hack.
+       * TODO: Revert this once b/32077885 is fixed.
+       */
    case HAL_PIXEL_FORMAT_RGBX_8888: return __DRI_IMAGE_FORMAT_XBGR8888;
    default:
       _eglLog(_EGL_WARNING, "unsupported native buffer format 0x%x", format);
@@ -678,6 +697,10 @@ droid_create_image_from_prime_fd_yuv(_EGLDisplay *disp, _EGLContext *ctx,
    ret = dri2_dpy->gralloc->lock_ycbcr(dri2_dpy->gralloc, buf->handle,
                                        0, 0, 0, 0, 0, &ycbcr);
    if (ret) {
+      /* HACK: See droid_create_image_from_prime_fd() and b/32077885. */
+      if (buf->format == HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED)
+         return NULL;
+
       _eglLog(_EGL_WARNING, "gralloc->lock_ycbcr failed: %d", ret);
       return NULL;
    }
@@ -757,8 +780,20 @@ droid_create_image_from_prime_fd(_EGLDisplay *disp, _EGLContext *ctx,
 {
    unsigned int pitch;
 
-   if (is_yuv(buf->format))
-      return droid_create_image_from_prime_fd_yuv(disp, ctx, buf, fd);
+   if (is_yuv(buf->format)) {
+      _EGLImage *image;
+
+      image = droid_create_image_from_prime_fd_yuv(disp, ctx, buf, fd);
+      /*
+       * HACK: b/32077885
+       * There is no API available to properly query the IMPLEMENTATION_DEFINED
+       * format. As a workaround we rely here on gralloc allocating either
+       * an arbitrary YCbCr 4:2:0 or RGBX_8888, with the latter being recognized
+       * by lock_ycbcr failing.
+       */
+      if (image || buf->format != HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED)
+         return image;
+   }
 
    const int fourcc = get_fourcc(buf->format);
    if (fourcc == -1) {
@@ -1005,7 +1040,6 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
       { HAL_PIXEL_FORMAT_RGBA_8888, { 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000 } },
       { HAL_PIXEL_FORMAT_RGBX_8888, { 0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000 } },
       { HAL_PIXEL_FORMAT_RGB_565,   { 0x0000f800, 0x000007e0, 0x0000001f, 0x00000000 } },
-      { HAL_PIXEL_FORMAT_BGRA_8888, { 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000 } },
    };
 
    unsigned int format_count[ARRAY_SIZE(visuals)] = { 0 };
@@ -1073,7 +1107,7 @@ droid_open_device(struct dri2_egl_display *dri2_dpy)
                                           GRALLOC_MODULE_PERFORM_GET_DRM_FD,
                                           &fd);
    if (err || fd < 0) {
-      _eglLog(_EGL_WARNING, "fail to get drm fd");
+      _eglLog(_EGL_DEBUG, "fail to get drm fd");
       fd = -1;
    }
 
@@ -1135,6 +1169,78 @@ static const __DRIextension *droid_image_loader_extensions[] = {
    NULL,
 };
 
+static bool
+droid_probe_device(_EGLDisplay *dpy, bool swrast)
+{
+   struct dri2_egl_display *dri2_dpy = dpy->DriverData;
+   bool loaded;
+
+   dri2_dpy->is_render_node = drmGetNodeTypeFromFd(dri2_dpy->fd) == DRM_NODE_RENDER;
+   if (!dri2_dpy->is_render_node && !gralloc_supports_gem_names()) {
+      _eglLog(_EGL_WARNING, "DRI2: control nodes not supported without GEM name suport in gralloc\n");
+      return false;
+   }
+
+   if (swrast)
+      dri2_dpy->driver_name = strdup("kms_swrast");
+   else
+      dri2_dpy->driver_name = loader_get_driver_for_fd(dri2_dpy->fd);
+
+   if (dri2_dpy->driver_name == NULL) {
+      _eglLog(_EGL_WARNING, "DRI2: failed to get driver name");
+      return false;
+   }
+
+   /* render nodes cannot use Gem names, and thus do not support
+    * the __DRI_DRI2_LOADER extension */
+   if (!dri2_dpy->is_render_node) {
+      dri2_dpy->loader_extensions = droid_dri2_loader_extensions;
+	   loaded = dri2_load_driver(dpy);
+   } else {
+      dri2_dpy->loader_extensions = droid_image_loader_extensions;
+      loaded = dri2_load_driver_dri3(dpy);
+   }
+
+   if (!loaded) {
+      _eglLog(_EGL_WARNING, "DRI2: failed to load driver");
+      free(dri2_dpy->driver_name);
+      dri2_dpy->driver_name = NULL;
+      return false;
+   }
+
+   return true;
+}
+
+static bool
+droid_probe_devices(_EGLDisplay *dpy, bool swrast)
+{
+   struct dri2_egl_display *dri2_dpy = dpy->DriverData;
+   const char *name_template = "%s/renderD%d";
+   const int base = 128;
+   const int limit = 64;
+   int minor;
+
+   for (minor = base; minor < base + limit; ++minor) {
+      char *card_path;
+
+      if (asprintf(&card_path, name_template, DRM_DIR_NAME, minor) < 0)
+         continue;
+
+      dri2_dpy->fd = loader_open_device(card_path);
+      free(card_path);
+      if (dri2_dpy->fd < 0)
+         continue;
+
+      if (droid_probe_device(dpy, swrast))
+         return true;
+
+      close(dri2_dpy->fd);
+      dri2_dpy->fd = -1;
+   }
+
+   return false;
+}
+
 EGLBoolean
 dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *dpy)
 {
@@ -1159,31 +1265,16 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *dpy)
    dpy->DriverData = (void *) dri2_dpy;
 
    dri2_dpy->fd = droid_open_device(dri2_dpy);
-   if (dri2_dpy->fd < 0) {
-      err = "DRI2: failed to open device";
-      goto cleanup;
-   }
-
-   dri2_dpy->driver_name = loader_get_driver_for_fd(dri2_dpy->fd);
-   if (dri2_dpy->driver_name == NULL) {
-      err = "DRI2: failed to get driver name";
-      goto cleanup;
-   }
-
-   dri2_dpy->is_render_node = drmGetNodeTypeFromFd(dri2_dpy->fd) == DRM_NODE_RENDER;
-
-   /* render nodes cannot use Gem names, and thus do not support
-    * the __DRI_DRI2_LOADER extension */
-   if (!dri2_dpy->is_render_node) {
-      dri2_dpy->loader_extensions = droid_dri2_loader_extensions;
-      if (!dri2_load_driver(dpy)) {
+   if (dri2_dpy->fd >= 0 && !droid_probe_device(dpy, false)) {
+      _eglLog(_EGL_WARNING, "DRI2: Failed to load hardware driver, trying software...");
+      if (!droid_probe_device(dpy, true)) {
          err = "DRI2: failed to load driver";
          goto cleanup;
       }
-   } else {
-      dri2_dpy->loader_extensions = droid_image_loader_extensions;
-      if (!dri2_load_driver_dri3(dpy)) {
-         err = "DRI3: failed to load driver";
+   } else if (!droid_probe_devices(dpy, false)) {
+      _eglLog(_EGL_WARNING, "DRI2: Failed to load hardware driver, trying software...");
+      if (!droid_probe_devices(dpy, true)) {
+         err = "DRI2: failed to load driver";
          goto cleanup;
       }
    }
