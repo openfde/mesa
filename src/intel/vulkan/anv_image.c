@@ -34,6 +34,10 @@
 
 #include "vk_format_info.h"
 
+static void
+add_fast_clear_state_buffer(struct anv_image *image,
+                            const struct anv_device *device);
+
 /**
  * Exactly one bit must be set in \a aspect.
  */
@@ -107,6 +111,68 @@ get_surface(struct anv_image *image, VkImageAspectFlags aspect)
    }
 }
 
+ static VkResult
+choose_isl_tiling_flags(struct anv_device *device,
+                        const struct anv_image_create_info *anv_info,
+                        const VkNativeBufferANDROID *gralloc_info,
+                        bool needs_shadow,
+                        isl_tiling_flags_t *restrict flags)
+{
+   *flags = ISL_TILING_ANY_MASK;
+
+   if (anv_info->isl_tiling_flags)
+      *flags &= anv_info->isl_tiling_flags;
+
+   if (needs_shadow)
+      *flags &= ISL_TILING_LINEAR_BIT;
+
+   if (anv_info->vk_info->tiling == VK_IMAGE_TILING_LINEAR)
+      *flags = ISL_TILING_LINEAR_BIT;
+
+#ifdef ANDROID
+   if (gralloc_info) {
+      int dma_buf = gralloc_info->handle->data[0];
+
+      uint32_t gem_handle = anv_gem_fd_to_handle(device, dma_buf);
+      if (gem_handle == 0) {
+         return vk_errorf(device->instance, device,
+                          VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR,
+                          "DRM_IOCTL_PRIME_FD_TO_HANDLE failed for "
+                          "VkNativeBufferANDROID");
+      }
+
+      int i915_tiling = anv_gem_get_tiling(device, gem_handle);
+      switch (i915_tiling) {
+      case I915_TILING_NONE:
+         *flags &= ISL_TILING_LINEAR_BIT;
+         break;
+      case I915_TILING_X:
+         *flags &= ISL_TILING_X_BIT;
+         break;
+      case I915_TILING_Y:
+         *flags &= ISL_TILING_Y0_BIT;
+         break;
+      case -1:
+         return vk_errorf(device->instance, device,
+                          VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR,
+                          "DRM_IOCTL_I915_GEM_GET_TILING failed for "
+                          "VkNativeBufferANDROID");
+      default:
+         return vk_errorf(device->instance, device,
+                          VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR,
+                          "DRM_IOCTL_I915_GEM_GET_TILING returned unknown "
+                          "tiling %d for VkNativeBufferANDROID", i915_tiling);
+
+      }
+   }
+#endif
+
+   /* Only invalid Vulkan usage can filter out all tiling formats. */
+   assert(*flags != 0);
+
+   return VK_SUCCESS;
+}
+
 static void
 add_surface(struct anv_image *image, struct anv_surface *surf)
 {
@@ -117,23 +183,22 @@ add_surface(struct anv_image *image, struct anv_surface *surf)
    image->alignment = MAX2(image->alignment, surf->isl.alignment);
 }
 
-
 static bool
 all_formats_ccs_e_compatible(const struct gen_device_info *devinfo,
-                             const struct VkImageCreateInfo *vk_info)
+                             const struct VkImageCreateInfo *base_info)
 {
    enum isl_format format =
-      anv_get_isl_format(devinfo, vk_info->format,
-                         VK_IMAGE_ASPECT_COLOR_BIT, vk_info->tiling);
+      anv_get_isl_format(devinfo, base_info->format,
+                         VK_IMAGE_ASPECT_COLOR_BIT, base_info->tiling);
 
    if (!isl_format_supports_ccs_e(devinfo, format))
       return false;
 
-   if (!(vk_info->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT))
+   if (!(base_info->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT))
       return true;
 
    const VkImageFormatListCreateInfoKHR *fmt_list =
-      vk_find_struct_const(vk_info->pNext, IMAGE_FORMAT_LIST_CREATE_INFO_KHR);
+      vk_find_struct_const(base_info->pNext, IMAGE_FORMAT_LIST_CREATE_INFO_KHR);
 
    if (!fmt_list || fmt_list->viewFormatCount == 0)
       return false;
@@ -141,13 +206,136 @@ all_formats_ccs_e_compatible(const struct gen_device_info *devinfo,
    for (uint32_t i = 0; i < fmt_list->viewFormatCount; i++) {
       enum isl_format view_format =
          anv_get_isl_format(devinfo, fmt_list->pViewFormats[i],
-                            VK_IMAGE_ASPECT_COLOR_BIT, vk_info->tiling);
+                            VK_IMAGE_ASPECT_COLOR_BIT, base_info->tiling);
 
       if (!isl_formats_are_ccs_e_compatible(devinfo, format, view_format))
          return false;
    }
 
    return true;
+}
+
+static void
+try_make_hiz_surface(const struct anv_device *dev,
+                     const VkImageCreateInfo *base_info,
+                     struct anv_image *image)
+{
+   bool ok UNUSED;
+
+   assert(image->aux_surface.isl.size == 0);
+
+   /* We don't advertise that depth buffers could be used as storage
+    * images.
+    */
+   assert(!(image->usage & VK_IMAGE_USAGE_STORAGE_BIT));
+
+   /* Allow the user to control HiZ enabling through environment variables.
+    * Disable by default on gen7 because resolves are not currently
+    * implemented pre-BDW.
+    */
+   if (!(image->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+      /* It will never be used as an attachment, HiZ is pointless. */
+   } else if (dev->info.gen == 7) {
+      anv_perf_warn(dev->instance, image, "Implement gen7 HiZ");
+   } else if (base_info->mipLevels > 1) {
+      anv_perf_warn(dev->instance, image, "Enable multi-LOD HiZ");
+   } else if (base_info->arrayLayers > 1) {
+      anv_perf_warn(dev->instance, image, "Implement multi-arrayLayer HiZ clears and resolves");
+   } else if (dev->info.gen == 8 && base_info->samples > 1) {
+      anv_perf_warn(dev->instance, image, "Enable gen8 multisampled HiZ");
+   } else if (!unlikely(INTEL_DEBUG & DEBUG_NO_HIZ)) {
+      ok = isl_surf_get_hiz_surf(&dev->isl_dev, &image->depth_surface.isl,
+                                 &image->aux_surface.isl);
+      assert(ok);
+      add_surface(image, &image->aux_surface);
+      image->aux_usage = ISL_AUX_USAGE_HIZ;
+   }
+}
+
+static void
+try_make_ccs_surface(const struct anv_device *dev,
+                     const VkImageCreateInfo *base_info,
+                     struct anv_image *image)
+{
+   assert(image->aux_surface.isl.size == 0);
+
+   if (unlikely(INTEL_DEBUG & DEBUG_NO_RBC))
+      return;
+
+   if (!isl_surf_get_ccs_surf(&dev->isl_dev, &image->color_surface.isl,
+                              &image->aux_surface.isl, 0))
+      return;
+
+   /* Disable CCS when it is not useful (i.e., when you can't render
+    * to the image with CCS enabled).
+    */
+   if (!isl_format_supports_rendering(&dev->info,
+                                      image->color_surface.isl.format)) {
+      /* While it may be technically possible to enable CCS for this
+       * image, we currently don't have things hooked up to get it
+       * working.
+       */
+      anv_perf_warn(dev->instance, image,
+                    "This image format doesn't support rendering. "
+                    "Not allocating an CCS buffer.");
+      image->aux_surface.isl.size = 0;
+      return;
+   }
+
+   add_surface(image, &image->aux_surface);
+   add_fast_clear_state_buffer(image, dev);
+
+   /* For images created without MUTABLE_FORMAT_BIT set, we know that
+    * they will always be used with the original format.  In
+    * particular, they will always be used with a format that
+    * supports color compression.  If it's never used as a storage
+    * image, then it will only be used through the sampler or the as
+    * a render target.  This means that it's safe to just leave
+    * compression on at all times for these formats.
+    */
+   if (!(base_info->usage & VK_IMAGE_USAGE_STORAGE_BIT) &&
+       all_formats_ccs_e_compatible(&dev->info, base_info)) {
+      image->aux_usage = ISL_AUX_USAGE_CCS_E;
+   }
+}
+
+static void
+try_make_mcs_surface(const struct anv_device *dev,
+                     const VkImageCreateInfo *base_info,
+                     struct anv_image *image)
+{
+   assert(image->aux_surface.isl.size == 0);
+   assert(!(base_info->usage & VK_IMAGE_USAGE_STORAGE_BIT));
+
+   if (!isl_surf_get_mcs_surf(&dev->isl_dev, &image->color_surface.isl,
+                              &image->aux_surface.isl))
+      return;
+
+   add_surface(image, &image->aux_surface);
+   add_fast_clear_state_buffer(image, dev);
+   image->aux_usage = ISL_AUX_USAGE_MCS;
+}
+
+static VkResult
+try_make_aux_surface(const struct anv_device *dev,
+                     const VkImageCreateInfo *base_info,
+                     const VkNativeBufferANDROID *gralloc_info,
+                     VkImageAspectFlags aspect,
+                     struct anv_image *image)
+{
+   /* We don't support aux surfaces for Android winsys images. */
+   if (gralloc_info)
+      return VK_SUCCESS;
+
+   if (aspect == VK_IMAGE_ASPECT_DEPTH_BIT) {
+      try_make_hiz_surface(dev, base_info, image);
+   } else if (aspect == VK_IMAGE_ASPECT_COLOR_BIT && base_info->samples == 1) {
+      try_make_ccs_surface(dev, base_info, image);
+   } else if (aspect == VK_IMAGE_ASPECT_COLOR_BIT && base_info->samples > 1) {
+      try_make_mcs_surface(dev, base_info, image);
+   }
+
+   return VK_SUCCESS;
 }
 
 /**
@@ -233,12 +421,14 @@ add_fast_clear_state_buffer(struct anv_image *image,
  * Exactly one bit must be set in \a aspect.
  */
 static VkResult
-make_surface(const struct anv_device *dev,
-             struct anv_image *image,
-             const struct anv_image_create_info *anv_info,
-             VkImageAspectFlags aspect)
+make_main_surface(struct anv_device *dev,
+                  const struct anv_image_create_info *anv_info,
+                  const VkNativeBufferANDROID *gralloc_info,
+                  VkImageAspectFlags aspect,
+                  struct anv_image *image)
 {
-   const VkImageCreateInfo *vk_info = anv_info->vk_info;
+   const VkImageCreateInfo *base_info = anv_info->vk_info;
+   VkResult result;
    bool ok UNUSED;
 
    static const enum isl_surf_dim vk_to_isl_surf_dim[] = {
@@ -247,26 +437,25 @@ make_surface(const struct anv_device *dev,
       [VK_IMAGE_TYPE_3D] = ISL_SURF_DIM_3D,
    };
 
-   /* Translate the Vulkan tiling to an equivalent ISL tiling, then filter the
-    * result with an optionally provided ISL tiling argument.
-    */
-   isl_tiling_flags_t tiling_flags =
-      (vk_info->tiling == VK_IMAGE_TILING_LINEAR) ?
-      ISL_TILING_LINEAR_BIT : ISL_TILING_ANY_MASK;
-
-   if (anv_info->isl_tiling_flags)
-      tiling_flags &= anv_info->isl_tiling_flags;
-
-   assert(tiling_flags);
-
    struct anv_surface *anv_surf = get_surface(image, aspect);
 
-   image->extent = anv_sanitize_image_extent(vk_info->imageType,
-                                             vk_info->extent);
+   image->extent = anv_sanitize_image_extent(base_info->imageType,
+                                             base_info->extent);
 
-   enum isl_format format = anv_get_isl_format(&dev->info, vk_info->format,
-                                               aspect, vk_info->tiling);
+   enum isl_format format = anv_get_isl_format(&dev->info, base_info->format,
+                                               aspect, base_info->tiling);
    assert(format != ISL_FORMAT_UNSUPPORTED);
+
+   uint32_t row_pitch = anv_info->stride;
+   if (gralloc_info) {
+      row_pitch = gralloc_info->stride *
+                  (isl_format_get_layout(format)->bpb / 8);
+   }
+
+   isl_surf_usage_flags_t usage =
+      choose_isl_surf_usage(base_info->flags, image->usage, aspect);
+   if (gralloc_info)
+      usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
 
    /* If an image is created as BLOCK_TEXEL_VIEW_COMPATIBLE, then we need to
     * fall back to linear on Broadwell and earlier because we aren't
@@ -276,25 +465,30 @@ make_surface(const struct anv_device *dev,
     */
    bool needs_shadow = false;
    if (dev->info.gen <= 8 &&
-       (vk_info->flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR) &&
-       vk_info->tiling == VK_IMAGE_TILING_OPTIMAL) {
+       (base_info->flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR) &&
+       base_info->tiling == VK_IMAGE_TILING_OPTIMAL) {
       assert(isl_format_is_compressed(format));
-      tiling_flags = ISL_TILING_LINEAR_BIT;
       needs_shadow = true;
    }
 
+   isl_tiling_flags_t tiling_flags;
+   result = choose_isl_tiling_flags(dev, anv_info, gralloc_info, needs_shadow,
+                                    &tiling_flags);
+   if (result != VK_SUCCESS)
+      return result;
+
    ok = isl_surf_init(&dev->isl_dev, &anv_surf->isl,
-      .dim = vk_to_isl_surf_dim[vk_info->imageType],
+      .dim = vk_to_isl_surf_dim[base_info->imageType],
       .format = format,
       .width = image->extent.width,
       .height = image->extent.height,
       .depth = image->extent.depth,
-      .levels = vk_info->mipLevels,
-      .array_len = vk_info->arrayLayers,
-      .samples = vk_info->samples,
+      .levels = base_info->mipLevels,
+      .array_len = base_info->arrayLayers,
+      .samples = base_info->samples,
       .min_alignment = 0,
-      .row_pitch = anv_info->stride,
-      .usage = choose_isl_surf_usage(vk_info->flags, image->usage, aspect),
+      .row_pitch = row_pitch,
+      .usage = usage,
       .tiling_flags = tiling_flags);
 
    /* isl_surf_init() will fail only if provided invalid input. Invalid input
@@ -304,26 +498,30 @@ make_surface(const struct anv_device *dev,
 
    add_surface(image, anv_surf);
 
+   if (gralloc_info)
+      assert(anv_surf->offset == 0);
+
    /* If an image is created as BLOCK_TEXEL_VIEW_COMPATIBLE, then we need to
     * create an identical tiled shadow surface for use while texturing so we
     * don't get garbage performance.
     */
    if (needs_shadow) {
+      assert(!gralloc_info);
       assert(aspect == VK_IMAGE_ASPECT_COLOR_BIT);
       assert(tiling_flags == ISL_TILING_LINEAR_BIT);
 
       ok = isl_surf_init(&dev->isl_dev, &image->shadow_surface.isl,
-         .dim = vk_to_isl_surf_dim[vk_info->imageType],
+         .dim = vk_to_isl_surf_dim[base_info->imageType],
          .format = format,
          .width = image->extent.width,
          .height = image->extent.height,
          .depth = image->extent.depth,
-         .levels = vk_info->mipLevels,
-         .array_len = vk_info->arrayLayers,
-         .samples = vk_info->samples,
+         .levels = base_info->mipLevels,
+         .array_len = base_info->arrayLayers,
+         .samples = base_info->samples,
          .min_alignment = 0,
-         .row_pitch = anv_info->stride,
-         .usage = choose_isl_surf_usage(image->usage, image->usage, aspect),
+         .row_pitch = row_pitch,
+         .usage = usage,
          .tiling_flags = ISL_TILING_ANY_MASK);
 
       /* isl_surf_init() will fail only if provided invalid input. Invalid input
@@ -334,140 +532,134 @@ make_surface(const struct anv_device *dev,
       add_surface(image, &image->shadow_surface);
    }
 
-   /* Add a HiZ surface to a depth buffer that will be used for rendering.
-    */
-   if (aspect == VK_IMAGE_ASPECT_DEPTH_BIT) {
-      /* We don't advertise that depth buffers could be used as storage
-       * images.
-       */
-       assert(!(image->usage & VK_IMAGE_USAGE_STORAGE_BIT));
-
-      /* Allow the user to control HiZ enabling. Disable by default on gen7
-       * because resolves are not currently implemented pre-BDW.
-       */
-      if (!(image->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-         /* It will never be used as an attachment, HiZ is pointless. */
-      } else if (dev->info.gen == 7) {
-         anv_perf_warn(dev->instance, image, "Implement gen7 HiZ");
-      } else if (vk_info->mipLevels > 1) {
-         anv_perf_warn(dev->instance, image, "Enable multi-LOD HiZ");
-      } else if (vk_info->arrayLayers > 1) {
-         anv_perf_warn(dev->instance, image,
-                       "Implement multi-arrayLayer HiZ clears and resolves");
-      } else if (dev->info.gen == 8 && vk_info->samples > 1) {
-         anv_perf_warn(dev->instance, image, "Enable gen8 multisampled HiZ");
-      } else if (!unlikely(INTEL_DEBUG & DEBUG_NO_HIZ)) {
-         assert(image->aux_surface.isl.size == 0);
-         ok = isl_surf_get_hiz_surf(&dev->isl_dev, &image->depth_surface.isl,
-                                    &image->aux_surface.isl);
-         assert(ok);
-         add_surface(image, &image->aux_surface);
-         image->aux_usage = ISL_AUX_USAGE_HIZ;
-      }
-   } else if (aspect == VK_IMAGE_ASPECT_COLOR_BIT && vk_info->samples == 1) {
-      if (!unlikely(INTEL_DEBUG & DEBUG_NO_RBC)) {
-         assert(image->aux_surface.isl.size == 0);
-         ok = isl_surf_get_ccs_surf(&dev->isl_dev, &anv_surf->isl,
-                                    &image->aux_surface.isl, 0);
-         if (ok) {
-
-            /* Disable CCS when it is not useful (i.e., when you can't render
-             * to the image with CCS enabled).
-             */
-            if (!isl_format_supports_rendering(&dev->info, format)) {
-               /* While it may be technically possible to enable CCS for this
-                * image, we currently don't have things hooked up to get it
-                * working.
-                */
-               anv_perf_warn(dev->instance, image,
-                             "This image format doesn't support rendering. "
-                             "Not allocating an CCS buffer.");
-               image->aux_surface.isl.size = 0;
-               return VK_SUCCESS;
-            }
-
-            add_surface(image, &image->aux_surface);
-            add_fast_clear_state_buffer(image, dev);
-
-            /* For images created without MUTABLE_FORMAT_BIT set, we know that
-             * they will always be used with the original format.  In
-             * particular, they will always be used with a format that
-             * supports color compression.  If it's never used as a storage
-             * image, then it will only be used through the sampler or the as
-             * a render target.  This means that it's safe to just leave
-             * compression on at all times for these formats.
-             */
-            if (!(vk_info->usage & VK_IMAGE_USAGE_STORAGE_BIT) &&
-                all_formats_ccs_e_compatible(&dev->info, vk_info)) {
-               image->aux_usage = ISL_AUX_USAGE_CCS_E;
-            }
-         }
-      }
-   } else if (aspect == VK_IMAGE_ASPECT_COLOR_BIT && vk_info->samples > 1) {
-      assert(image->aux_surface.isl.size == 0);
-      assert(!(vk_info->usage & VK_IMAGE_USAGE_STORAGE_BIT));
-      ok = isl_surf_get_mcs_surf(&dev->isl_dev, &anv_surf->isl,
-                                 &image->aux_surface.isl);
-      if (ok) {
-         add_surface(image, &image->aux_surface);
-         add_fast_clear_state_buffer(image, dev);
-         image->aux_usage = ISL_AUX_USAGE_MCS;
-      }
-   }
-
    return VK_SUCCESS;
 }
 
+#ifdef ANDROID
+static VkResult
+import_gralloc(struct anv_device *device,
+               struct anv_image *image,
+               const VkNativeBufferANDROID *gralloc_info)
+{
+   VkResult result;
+
+
+   if (gralloc_info->handle->numFds != 1) {
+      return vk_errorf(device->instance, device,
+                       VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR,
+                       "VkNativeBufferANDROID::handle::numFds is %d, "
+                       "expected 1", gralloc_info->handle->numFds);
+   }
+
+   int dma_buf = gralloc_info->handle->data[0];
+
+   /* Do not close the gralloc handle's dma_buf. The lifetime of the dma_buf
+    * must exceed that of the gralloc handle, and we do not own the gralloc
+    * handle.
+    */
+   result = anv_bo_cache_import(device, &device->bo_cache, dma_buf, &image->bo);
+   if (result != VK_SUCCESS)
+      return result;
+
+   /* To validate the dma_buf's size, we must have already calculated the
+    * image's layout.
+    */
+   assert(image->size > 0);
+
+   if (image->bo->size < image->size) {
+      result = vk_errorf(device->instance, device,
+                         VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR,
+                         "VkNativeBufferANDROID's dma_buf is too small for "
+                         "the VkImage: %lluB < %lluB",
+                         image->bo->size, image->size);
+      anv_bo_cache_release(device, &device->bo_cache, image->bo);
+      image->bo = NULL;
+      return result;
+   }
+
+   image->bo_is_owned = true;
+
+   /* We need to set the WRITE flag on window system buffers so that GEM will
+    * know we're writing to them and synchronize uses on other rings (eg if
+    * the display server uses the blitter ring).
+    */
+   image->bo->flags &= ~EXEC_OBJECT_ASYNC;
+   image->bo->flags |= EXEC_OBJECT_WRITE;
+
+    return VK_SUCCESS;
+}
+#endif
+
 VkResult
 anv_image_create(VkDevice _device,
-                 const struct anv_image_create_info *create_info,
+                 const struct anv_image_create_info *anv_info,
                  const VkAllocationCallbacks* alloc,
                  VkImage *pImage)
 {
    ANV_FROM_HANDLE(anv_device, device, _device);
-   const VkImageCreateInfo *pCreateInfo = create_info->vk_info;
+   const VkImageCreateInfo *base_info = anv_info->vk_info;
+   const VkNativeBufferANDROID *gralloc_info =
+      vk_find_struct_const(base_info->pNext, NATIVE_BUFFER_ANDROID);
    struct anv_image *image = NULL;
    VkResult r;
 
-   assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
+   assert(base_info->sType == VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
 
-   anv_assert(pCreateInfo->mipLevels > 0);
-   anv_assert(pCreateInfo->arrayLayers > 0);
-   anv_assert(pCreateInfo->samples > 0);
-   anv_assert(pCreateInfo->extent.width > 0);
-   anv_assert(pCreateInfo->extent.height > 0);
-   anv_assert(pCreateInfo->extent.depth > 0);
+   anv_assert(base_info->mipLevels > 0);
+   anv_assert(base_info->arrayLayers > 0);
+   anv_assert(base_info->samples > 0);
+   anv_assert(base_info->extent.width > 0);
+   anv_assert(base_info->extent.height > 0);
+   anv_assert(base_info->extent.depth > 0);
 
    image = vk_zalloc2(&device->alloc, alloc, sizeof(*image), 8,
                        VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!image)
       return vk_error(VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   image->type = pCreateInfo->imageType;
-   image->extent = pCreateInfo->extent;
-   image->vk_format = pCreateInfo->format;
+   image->type = base_info->imageType;
+   image->extent = base_info->extent;
+   image->vk_format = base_info->format;
    image->aspects = vk_format_aspects(image->vk_format);
-   image->levels = pCreateInfo->mipLevels;
-   image->array_size = pCreateInfo->arrayLayers;
-   image->samples = pCreateInfo->samples;
-   image->usage = pCreateInfo->usage;
-   image->tiling = pCreateInfo->tiling;
+   image->levels = base_info->mipLevels;
+   image->array_size = base_info->arrayLayers;
+   image->samples = base_info->samples;
+   image->usage = base_info->usage;
+   image->tiling = base_info->tiling;
    image->aux_usage = ISL_AUX_USAGE_NONE;
 
    uint32_t b;
    for_each_bit(b, image->aspects) {
-      r = make_surface(device, image, create_info, (1 << b));
+      VkImageAspectFlagBits aspect = 1 << b;
+
+      r = make_main_surface(device, anv_info, gralloc_info,aspect, image);
+      if (r != VK_SUCCESS)
+         goto fail;
+
+      r = try_make_aux_surface(device, base_info, gralloc_info, aspect, image);
       if (r != VK_SUCCESS)
          goto fail;
    }
+
+#ifdef ANDROID
+   if (gralloc_info) {
+      r = import_gralloc(device, image, gralloc_info);
+       if (r != VK_SUCCESS)
+          goto fail;
+    }
+#endif
 
    *pImage = anv_image_to_handle(image);
 
    return VK_SUCCESS;
 
 fail:
-   if (image)
+   if (image) {
+      if (image->bo_is_owned && image->bo)
+         anv_bo_cache_release(device, &device->bo_cache, image->bo);
+
       vk_free2(&device->alloc, alloc, image);
+   }
 
    return r;
 }
@@ -495,6 +687,9 @@ anv_DestroyImage(VkDevice _device, VkImage _image,
 
    if (!image)
       return;
+
+   if (image->bo_is_owned && image->bo)
+      anv_bo_cache_release(device, &device->bo_cache, image->bo);
 
    vk_free2(&device->alloc, pAllocator, image);
 }
