@@ -861,7 +861,9 @@ brwCreateContext(gl_api api,
    brw->screen = screen;
    brw->bufmgr = screen->bufmgr;
 
-   brw->has_hiz = devinfo->has_hiz_and_separate_stencil;
+   /* Braswell has hiz issues, disable it. */
+   brw->has_hiz = devinfo->has_hiz_and_separate_stencil
+                  && screen->deviceID != 0x22B1;
    brw->has_separate_stencil = devinfo->has_hiz_and_separate_stencil;
 
    brw->has_swizzling = screen->hw_has_swizzling;
@@ -940,7 +942,7 @@ brwCreateContext(gl_api api,
 
    intel_batchbuffer_init(brw);
 
-   if (devinfo->gen >= 6) {
+   if (devinfo->gen >= 7) {
       /* Create a new hardware context.  Using a hardware context means that
        * our GPU state will be saved/restored on context switch, allowing us
        * to assume that the GPU is in the same state we left it in.
