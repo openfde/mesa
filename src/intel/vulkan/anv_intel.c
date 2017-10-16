@@ -71,10 +71,13 @@ VkResult anv_CreateDmaBufImageINTEL(
    if (result != VK_SUCCESS)
       goto fail;
 
+   close(pCreateInfo->fd);
+
    image = anv_image_from_handle(image_h);
 
-   result = anv_bo_cache_import(device, &device->bo_cache,
-                                pCreateInfo->fd, image->size, &mem->bo);
+   result = anv_bo_cache_import_with_size(device, &device->bo_cache,
+                                          pCreateInfo->fd, image->size,
+                                          &mem->bo);
    if (result != VK_SUCCESS)
       goto fail_import;
 
