@@ -65,6 +65,9 @@ static const struct droid_yuv_format droid_yuv_formats[] = {
    { HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED,   1, 1, __DRI_IMAGE_FOURCC_YVU420 },
 };
 
+static EGLBoolean
+droid_destroy_surface(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *surf);
+
 static int
 get_fourcc_yuv(int native, int is_ycrcb, int chroma_step)
 {
@@ -292,6 +295,25 @@ droid_window_cancel_buffer(struct dri2_egl_surface *dri2_surf)
    }
 }
 
+static EGLBoolean
+set_shared_buffer_mode(_EGLSurface *surf)
+{
+   struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surf);
+   struct ANativeWindow *window = dri2_surf->window;
+   bool mode = surf->RenderBuffer == EGL_SINGLE_BUFFER;
+
+   _eglLog(_EGL_DEBUG,  "call native_window_set_shared_buffer_mode(window=%p, "
+           "mode=%d)", window, mode);
+
+   if (native_window_set_shared_buffer_mode(window, mode)) {
+      _eglLog(_EGL_WARNING,  "failed native_window_set_shared_buffer_mode(window=%p, "
+              "mode=%d)", window, mode);
+      return EGL_FALSE;
+   }
+
+   return EGL_TRUE;
+}
+
 static _EGLSurface *
 droid_create_surface(_EGLDriver *drv, _EGLDisplay *disp, EGLint type,
 		    _EGLConfig *conf, void *native_window,
@@ -369,8 +391,27 @@ droid_create_window_surface(_EGLDriver *drv, _EGLDisplay *disp,
                             _EGLConfig *conf, void *native_window,
                             const EGLint *attrib_list)
 {
-   return droid_create_surface(drv, disp, EGL_WINDOW_BIT, conf,
-                               native_window, attrib_list);
+   _eglLog(_EGL_DEBUG, "%s", __func__);
+
+   _EGLSurface *surf = droid_create_surface(drv, disp, EGL_WINDOW_BIT, conf,
+                                            native_window, attrib_list);
+   if (!surf)
+      return NULL;
+
+   if ((conf->SurfaceType & EGL_MUTABLE_RENDER_BUFFER_BIT_KHR) &&
+       surf->RenderBuffer == EGL_SINGLE_BUFFER)
+   {
+      _eglLog(_EGL_DEBUG, "%s(window=%p): set EGL_RENDER_BUFFER = EGL_SINGLE_BUFFER",
+              __func__, native_window);
+
+       if (!set_shared_buffer_mode(surf)) {
+          _eglError(EGL_BAD_MATCH, "eglCreateWindowSurface");
+          droid_destroy_surface(drv, disp, surf);
+          return NULL;
+       }
+   }
+
+   return surf;
 }
 
 static _EGLSurface *
@@ -612,6 +653,20 @@ droid_swap_buffers(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *draw)
    if (dri2_surf->base.Type != EGL_WINDOW_BIT)
       return EGL_TRUE;
 
+   /* From the EGL_KHR_mutable_render_buffer spec (v12):
+    *
+    *    If surface is a single-buffered window, pixmap, or pbuffer surface
+    *    for which there is a pending change to the EGL_RENDER_BUFFER
+    *    attribute, eglSwapBuffers performs an implicit flush operation on the
+    *    context and effects the attribute change. If surface is
+    *    a single-buffered window, pixmap, or pbuffer surface for which there
+    *    is no pending change to the EGL_RENDER_BUFFER attribute,
+    *    eglSwapBuffers has no effect.
+    */
+   if (draw->RenderBuffer == EGL_SINGLE_BUFFER &&
+       draw->CurrentContext->WindowRenderBuffer == EGL_SINGLE_BUFFER)
+      return EGL_TRUE;
+
    for (int i = 0; i < ARRAY_SIZE(dri2_surf->color_buffers); i++) {
       if (dri2_surf->color_buffers[i].age > 0)
          dri2_surf->color_buffers[i].age++;
@@ -635,6 +690,14 @@ droid_swap_buffers(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *draw)
       droid_window_enqueue_buffer(disp, dri2_surf);
 
    dri2_dpy->flush->invalidate(dri2_surf->dri_drawable);
+
+   /* From the EGL_KHR_mutable_render_buffer spec (v12):
+    *
+    *    If the EGL_RENDER_BUFFER attribute of a surface is changed by calling
+    *    eglSurfaceAttrib, the value returned by eglQueryContext will change
+    *    once eglSwapBuffers is called [...]
+    */
+   draw->CurrentContext->WindowRenderBuffer = draw->RenderBuffer;
 
    return EGL_TRUE;
 }
@@ -890,6 +953,41 @@ droid_query_surface(_EGLDriver *drv, _EGLDisplay *dpy, _EGLSurface *surf,
    return _eglQuerySurface(drv, dpy, surf, attribute, value);
 }
 
+static EGLBoolean
+droid_surface_attrib(_EGLDriver *drv, _EGLDisplay *dpy, _EGLSurface *surf,
+                     EGLint attribute, EGLint value)
+{
+   EGLint old_value;
+
+   _eglLog(_EGL_DEBUG, "%s(surf=%p, attr=0x%x, value=0x%x",
+           __func__, surf, attribute, value);
+
+   if (attribute == EGL_RENDER_BUFFER)
+      old_value = surf->RenderBuffer;
+
+   if (!_eglSurfaceAttrib(drv, dpy, surf, attribute, value))
+      return EGL_FALSE;
+
+   /* From the EGL_KHR_mutable_render_buffer spec (v12):
+    *
+    *    If attribute is EGL_RENDER_BUFFER, and [...] the windowing system
+    *    is unable to support the requested rendering mode, an
+    *    EGL_BAD_MATCH error is generated  and the EGL_RENDER_BUFFER state
+    *    is left unchanged.
+    */
+   if (attribute == EGL_RENDER_BUFFER) {
+      _eglLog(_EGL_DEBUG, "%s(surf=%p, EGL_RENDER_BUFFER, 0x%x)",
+              __func__, surf, value);
+
+      if (!set_shared_buffer_mode(surf)) {
+         surf->RenderBuffer = old_value;
+         return _eglError(EGL_BAD_MATCH, "eglSurfaceAttrib");
+      }
+   }
+
+   return EGL_TRUE;
+}
+
 static _EGLImage *
 dri2_create_image_android_native_buffer(_EGLDisplay *disp,
                                         _EGLContext *ctx,
@@ -1045,6 +1143,10 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
    unsigned int format_count[ARRAY_SIZE(visuals)] = { 0 };
    int config_count = 0;
 
+      EGLint surface_type = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;
+      if (dpy->Extensions.KHR_mutable_render_buffer)
+         surface_type |= EGL_MUTABLE_RENDER_BUFFER_BIT_KHR;
+
    /* The nesting of loops is significant here. Also significant is the order
     * of the HAL pixel formats. Many Android apps (such as Google's official
     * NDK GLES2 example app), and even portions the core framework code (such
@@ -1065,8 +1167,6 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
     */
    for (int i = 0; i < ARRAY_SIZE(visuals); i++) {
       for (int j = 0; dri2_dpy->driver_configs[j]; j++) {
-         const EGLint surface_type = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;
-
          const EGLint config_attrs[] = {
            EGL_NATIVE_VISUAL_ID,   visuals[i].format,
            EGL_NATIVE_VISUAL_TYPE, visuals[i].format,
@@ -1133,6 +1233,7 @@ static const struct dri2_egl_display_vtbl droid_display_vtbl = {
    .copy_buffers = dri2_fallback_copy_buffers,
    .query_buffer_age = droid_query_buffer_age,
    .query_surface = droid_query_surface,
+   .surface_attrib = droid_surface_attrib,
    .create_wayland_buffer_from_image = dri2_fallback_create_wayland_buffer_from_image,
    .get_sync_values = dri2_fallback_get_sync_values,
    .get_dri_drawable = dri2_surface_get_dri_drawable,
@@ -1295,6 +1396,9 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *dpy)
    dpy->Extensions.ANDROID_image_native_buffer = EGL_TRUE;
    dpy->Extensions.ANDROID_recordable = EGL_TRUE;
    dpy->Extensions.EXT_buffer_age = EGL_TRUE;
+   /* TODO(chadv): Enable only if ANDROID_API_LEVEL is sufficient */
+   /* TODO(chadv): Enable only if DRI driver supports iface */
+   dpy->Extensions.KHR_mutable_render_buffer = EGL_TRUE;
 #if ANDROID_API_LEVEL >= 23
    dpy->Extensions.KHR_partial_update = EGL_TRUE;
 #endif

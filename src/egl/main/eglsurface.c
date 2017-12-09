@@ -450,6 +450,31 @@ _eglSurfaceAttrib(_EGLDriver *drv, _EGLDisplay *dpy, _EGLSurface *surface,
          break;
       surface->MultisampleResolve = value;
       break;
+   case EGL_RENDER_BUFFER:
+      if (!dpy->Extensions.KHR_mutable_render_buffer) {
+         err = EGL_BAD_ATTRIBUTE;
+         break;
+      }
+
+      if (value != EGL_BACK_BUFFER && value != EGL_SINGLE_BUFFER) {
+         err = EGL_BAD_PARAMETER;
+         break;
+      }
+
+      /* From the EGL_KHR_mutable_render_buffer spec (v12):
+       *
+       *    If attribute is EGL_RENDER_BUFFER, and the EGL_SURFACE_TYPE
+       *    attribute of the EGLConfig used to create surface does not contain
+       *    EGL_MUTABLE_RENDER_BUFFER_BIT_KHR, [...] an EGL_BAD_MATCH error is
+       *    generated [...].
+       */
+      if (!(surface->Config->SurfaceType & EGL_MUTABLE_RENDER_BUFFER_BIT_KHR)) {
+         err = EGL_BAD_MATCH;
+         break;
+      }
+
+      surface->RenderBuffer = value;
+      break;
    case EGL_SWAP_BEHAVIOR:
       switch (value) {
       case EGL_BUFFER_DESTROYED:

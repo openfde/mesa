@@ -286,6 +286,7 @@ _eglError(EGLint errCode, const char *msg)
       else
          type = EGL_DEBUG_MSG_ERROR_KHR;
 
+      _eglLog(_EGL_WARNING, "%s", msg);
       _eglDebugReport(errCode, NULL, type, msg);
    } else
       _eglInternalError(errCode, msg);

@@ -507,6 +507,7 @@ _eglCreateExtensionsString(_EGLDisplay *dpy)
       _eglAppendExtension(&exts, "EGL_KHR_image");
    _EGL_CHECK_EXTENSION(KHR_image_base);
    _EGL_CHECK_EXTENSION(KHR_image_pixmap);
+   _EGL_CHECK_EXTENSION(KHR_mutable_render_buffer);
    _EGL_CHECK_EXTENSION(KHR_no_config_context);
    _EGL_CHECK_EXTENSION(KHR_partial_update);
    _EGL_CHECK_EXTENSION(KHR_reusable_sync);
@@ -841,6 +842,12 @@ eglMakeCurrent(EGLDisplay dpy, EGLSurface draw, EGLSurface read,
       RETURN_EGL_ERROR(disp, EGL_BAD_NATIVE_WINDOW, EGL_FALSE);
 
    ret = drv->API.MakeCurrent(drv, disp, draw_surf, read_surf, context);
+   if (ret != EGL_SUCCESS)
+      RETURN_EGL_EVAL(disp, ret);
+
+   /* TODO(chadv): This can't be right */
+   if (draw_surf && draw_surf->Type == EGL_WINDOW_BIT)
+      context->WindowRenderBuffer = draw_surf->RenderBuffer;
 
    RETURN_EGL_EVAL(disp, ret);
 }
