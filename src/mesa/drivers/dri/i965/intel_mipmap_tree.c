@@ -1021,6 +1021,13 @@ intel_miptree_create_for_dri_image(struct brw_context *brw,
    if (!is_winsys_image)
       mt_create_flags |= MIPTREE_CREATE_NO_AUX;
 
+   /* HACK(chadv): Ensure that EGL_KHR_mutable_render_buffer produces correct
+    * rendering in EGL_SINGLE_BUFFER case by disabling compression for all
+    * winsys surfaces.
+    */
+   if (is_winsys_image)
+      mt_create_flags |= MIPTREE_CREATE_NO_AUX;
+
    /* If we have a modifier which specifies aux, don't create one yet */
    if (mod_info && mod_info->aux_usage != ISL_AUX_USAGE_NONE)
       mt_create_flags |= MIPTREE_CREATE_NO_AUX;
