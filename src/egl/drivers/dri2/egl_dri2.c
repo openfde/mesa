@@ -2135,6 +2135,16 @@ dri2_query_surface(_EGLDriver *drv, _EGLDisplay *dpy, _EGLSurface *surf,
    return dri2_dpy->vtbl->query_surface(drv, dpy, surf, attribute, value);
 }
 
+static EGLBoolean
+dri2_surface_attrib(_EGLDriver *drv, _EGLDisplay *dpy, _EGLSurface *surf,
+                    EGLint attribute, EGLint value)
+{
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(dpy);
+   if (!dri2_dpy->vtbl->surface_attrib)
+      return _eglSurfaceAttrib(drv, dpy, surf, attribute, value);
+   return dri2_dpy->vtbl->surface_attrib(drv, dpy, surf, attribute, value);
+}
+
 static struct wl_buffer*
 dri2_create_wayland_buffer_from_image(_EGLDriver *drv, _EGLDisplay *dpy,
                                       _EGLImage *img)
@@ -3256,6 +3266,7 @@ _eglBuiltInDriver(void)
    dri2_drv->API.DestroyImageKHR = dri2_destroy_image_khr;
    dri2_drv->API.CreateWaylandBufferFromImageWL = dri2_create_wayland_buffer_from_image;
    dri2_drv->API.QuerySurface = dri2_query_surface;
+   dri2_drv->API.SurfaceAttrib = dri2_surface_attrib;
 #ifdef HAVE_LIBDRM
    dri2_drv->API.CreateDRMImageMESA = dri2_create_drm_image_mesa;
    dri2_drv->API.ExportDRMImageMESA = dri2_export_drm_image_mesa;

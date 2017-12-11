@@ -137,6 +137,10 @@ struct dri2_egl_display_vtbl {
                                _EGLSurface *surf, EGLint attribute,
                                EGLint *value);
 
+   EGLBoolean (*surface_attrib)(_EGLDriver *drv, _EGLDisplay *dpy,
+                                _EGLSurface *surf, EGLint attribute,
+                                EGLint value);
+
    struct wl_buffer* (*create_wayland_buffer_from_image)(
                         _EGLDriver *drv, _EGLDisplay *dpy, _EGLImage *img);
 
