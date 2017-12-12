@@ -106,7 +106,12 @@ _eglInitLogger(void)
    if (logging.initialized)
       return;
 
+#if 1 /* DEBUG(chadv): Force-enable a verbose logcat */
+   log_env = "debug";
+#else
    log_env = getenv("EGL_LOG_LEVEL");
+#endif
+
    if (log_env) {
       for (i = 0; i < ARRAY_SIZE(level_strings); i++) {
          if (strcasecmp(log_env, level_strings[i]) == 0) {
