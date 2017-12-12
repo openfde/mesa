@@ -31,6 +31,9 @@
 #define EGLLOG_INCLUDED
 
 
+/* DEBUG(chadv): Force-enable a verbose logcat */
+#define LOG_NDEBUG 0
+
 #include "egltypedefs.h"
 
 
