@@ -1291,11 +1291,6 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *dpy)
 
    dri2_setup_screen(dpy);
 
-   if (!droid_add_configs_for_visuals(drv, dpy)) {
-      err = "DRI2: failed to add configs";
-      goto cleanup;
-   }
-
    dpy->Extensions.ANDROID_framebuffer_target = EGL_TRUE;
    dpy->Extensions.ANDROID_image_native_buffer = EGL_TRUE;
    dpy->Extensions.ANDROID_recordable = EGL_TRUE;
@@ -1303,6 +1298,11 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *dpy)
 #if ANDROID_API_LEVEL >= 23
    dpy->Extensions.KHR_partial_update = EGL_TRUE;
 #endif
+
+   if (!droid_add_configs_for_visuals(drv, dpy)) {
+      err = "DRI2: failed to add configs";
+      goto cleanup;
+   }
 
    /* Fill vtbl last to prevent accidentally calling virtual function during
     * initialization.
