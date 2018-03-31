@@ -299,7 +299,10 @@ dri2_add_config(_EGLDisplay *disp, const __DRIconfig *dri_config, int id,
          _eglSetConfigKey(&base, EGL_MAX_PBUFFER_HEIGHT,
                           _EGL_MAX_PBUFFER_HEIGHT);
          break;
-
+      case __DRI_ATTRIB_MUTABLE_RENDER_BUFFER:
+         if (disp->Extensions.KHR_mutable_render_buffer)
+            surface_type |= EGL_MUTABLE_RENDER_BUFFER_BIT_KHR;
+         break;
       default:
          key = dri2_to_egl_attribute_map[attrib];
          if (key != 0)
