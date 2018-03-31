@@ -1094,6 +1094,18 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
       }
    }
 
+   _eglLog(_EGL_DEBUG, "%s:%d: %s: make EGLConfigs", __FILE__, __LINE__, __func__);
+   for (int i = 0; i < dpy->Configs->Size; ++i) {
+      const _EGLConfig *config = dpy->Configs->Elements[i];
+      _eglLog(_EGL_DEBUG, "    EGLConfig[%d]:", i);
+      _eglLog(_EGL_DEBUG, "        EGL_CONFIG_ID: %d", config->ConfigID);
+      _eglLog(_EGL_DEBUG, "        EGL_RED_SIZE: %d", config->RedSize);
+      _eglLog(_EGL_DEBUG, "        EGL_BLUE_SIZE: %d", config->BlueSize);
+      _eglLog(_EGL_DEBUG, "        EGL_GREEN_SIZE: %d", config->GreenSize);
+      _eglLog(_EGL_DEBUG, "        EGL_ALPHA_SIZE: %d", config->AlphaSize);
+      _eglLog(_EGL_DEBUG, "        EGL_SURFACE_TYPE: 0x%x", config->SurfaceType);
+   }
+
    return (config_count != 0);
 }
 
