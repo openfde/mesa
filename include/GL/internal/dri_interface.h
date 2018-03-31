@@ -48,6 +48,7 @@ typedef unsigned int drm_drawable_t;
 typedef struct drm_clip_rect drm_clip_rect_t;
 #endif
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /**
@@ -704,7 +705,8 @@ struct __DRIuseInvalidateExtensionRec {
 #define __DRI_ATTRIB_BIND_TO_TEXTURE_TARGETS	46
 #define __DRI_ATTRIB_YINVERTED			47
 #define __DRI_ATTRIB_FRAMEBUFFER_SRGB_CAPABLE	48
-#define __DRI_ATTRIB_MAX			(__DRI_ATTRIB_FRAMEBUFFER_SRGB_CAPABLE + 1)
+#define __DRI_ATTRIB_MUTABLE_RENDER_BUFFER	49
+#define __DRI_ATTRIB_MAX			50
 
 /* __DRI_ATTRIB_RENDER_TYPE */
 #define __DRI_ATTRIB_RGBA_BIT			0x01	
@@ -1947,6 +1949,35 @@ struct __DRIbackgroundCallableExtensionRec {
     * which context any callbacks are associated with.
     */
    GLboolean (*isThreadSafe)(void *loaderPrivate);
+};
+
+/**
+ * TODO(chadv): doc
+ */
+#define __DRI_MUTABLE_RENDER_BUFFER_DRIVER "DRI_MutableRenderBufferDriver"
+#define __DRI_MUTABLE_RENDER_BUFFER_DRIVER_VERSION 1
+
+typedef struct __DRImutableRenderBufferDriverExtensionRec __DRImutableRenderBufferDriverExtension;
+struct __DRImutableRenderBufferDriverExtensionRec {
+   __DRIextension base;
+
+   /* TODO(chadv): doc */
+   void (*setSharedBufferMode)(__DRIdrawable *drawable, bool mode);
+};
+
+/**
+ * TODO(chadv): doc
+ */
+#define __DRI_MUTABLE_RENDER_BUFFER_LOADER "DRI_MutableRenderBufferLoader"
+#define __DRI_MUTABLE_RENDER_BUFFER_LOADER_VERSION 1
+
+typedef struct __DRImutableRenderBufferLoaderExtensionRec __DRImutableRenderBufferLoaderExtension;
+struct __DRImutableRenderBufferLoaderExtensionRec {
+   __DRIextension base;
+
+   bool (*isSharedBuffer)(__DRIdrawable *drawable, void *loaderPrivate);
+   void (*displaySharedBuffer)(__DRIdrawable *drawable, int fence_fd,
+                               void *loaderPrivate);
 };
 
 #endif

@@ -1094,7 +1094,7 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
       }
    }
 
-   _eglLog(_EGL_DEBUG, "%s:%d: %s: make EGLConfigs", __FILE__, __LINE__, __func__);
+   _eglLog(_EGL_DEBUG, "%s: dump EGLConfigs[%u]", __func__, dpy->Configs->Size);
    for (int i = 0; i < dpy->Configs->Size; ++i) {
       const _EGLConfig *config = dpy->Configs->Elements[i];
       _eglLog(_EGL_DEBUG, "    EGLConfig[%d]:", i);
@@ -1167,10 +1167,31 @@ static const __DRIimageLoaderExtension droid_image_loader_extension = {
    .getCapability       = droid_get_capability,
 };
 
+static bool
+droid_is_shared_buffer(__DRIdrawable *driDrawable, void *loaderPrivate)
+{
+   return false;
+}
+
+static void
+droid_display_shared_buffer(__DRIdrawable *driDrawable, int enqueue_fence_fd,
+                            void *loaderPrivate)
+{
+   return;
+}
+
+static const __DRImutableRenderBufferLoaderExtension droid_mutable_render_buffer_extension = {
+   .base = { __DRI_MUTABLE_RENDER_BUFFER_LOADER, 1 },
+
+   .isSharedBuffer = droid_is_shared_buffer,
+   .displaySharedBuffer = droid_display_shared_buffer,
+};
+
 static const __DRIextension *droid_dri2_loader_extensions[] = {
    &droid_dri2_loader_extension.base,
    &image_lookup_extension.base,
    &use_invalidate.base,
+   &droid_mutable_render_buffer_extension.base,
    NULL,
 };
 
@@ -1178,6 +1199,7 @@ static const __DRIextension *droid_image_loader_extensions[] = {
    &droid_image_loader_extension.base,
    &image_lookup_extension.base,
    &use_invalidate.base,
+   &droid_mutable_render_buffer_extension.base,
    NULL,
 };
 
@@ -1303,6 +1325,10 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *dpy)
 
    dri2_setup_screen(dpy);
 
+
+   /* Create configs *after* enabling extensions because presence of DRI
+    * driver extensions can affect the capabilities of EGLConfigs.
+    */
    if (!droid_add_configs_for_visuals(drv, dpy)) {
       err = "DRI2: failed to add configs";
       goto cleanup;
@@ -1314,6 +1340,17 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *dpy)
    dpy->Extensions.EXT_buffer_age = EGL_TRUE;
 #if ANDROID_API_LEVEL >= 23
    dpy->Extensions.KHR_partial_update = EGL_TRUE;
+#endif
+   /* FIXME(chadv): Make ANDRID_API_LEVEL work in ARC++. */
+#if 1 /* ANDROID_API_LEVEL >= 24 */
+   if (dri2_dpy->mutable_render_buffer)
+      dpy->Extensions.KHR_mutable_render_buffer = EGL_TRUE;
+
+   _eglLog(_EGL_DEBUG, "%s: trigger dri2_dpy->mutable_render_buffer = 0x%p",
+           __func__, dri2_dpy->mutable_render_buffer);
+   _eglLog(_EGL_DEBUG, "%s: dpy->Extensions.KHR_mutable_render_buffer = 0x%p",
+           __func__, dpy->Extensions.KHR_mutable_render_buffer);
+
 #endif
 
    /* Fill vtbl last to prevent accidentally calling virtual function during
