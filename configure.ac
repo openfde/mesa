@@ -271,6 +271,8 @@ android=no
 case "$host_os" in
 *-android*)
     android=yes
+    # HACK(chadv)
+    DEFINES="$DEFINES -DANDROID_API_LEVEL=25"
     ;;
 linux*|*-gnu*|gnu*|cygwin*)
     DEFINES="$DEFINES -D_GNU_SOURCE"
