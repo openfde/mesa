@@ -122,7 +122,7 @@ _eglParseSurfaceAttribList(_EGLSurface *surf, const EGLint *attrib_list)
             err = EGL_BAD_ATTRIBUTE;
             break;
          }
-         surf->RenderBuffer = val;
+         surf->RequestedRenderBuffer = val;
          break;
       case EGL_POST_SUB_BUFFER_SUPPORTED_NV:
          if (!dpy->Extensions.NV_post_sub_buffer ||
@@ -285,7 +285,8 @@ _eglInitSurface(_EGLSurface *surf, _EGLDisplay *dpy, EGLint type,
    surf->TextureTarget = EGL_NO_TEXTURE;
    surf->MipmapTexture = EGL_FALSE;
    surf->LargestPbuffer = EGL_FALSE;
-   surf->RenderBuffer = renderBuffer;
+   surf->RequestedRenderBuffer = renderBuffer;
+   surf->ActiveRenderBuffer = renderBuffer;
    surf->VGAlphaFormat = EGL_VG_ALPHA_FORMAT_NONPRE;
    surf->VGColorspace = EGL_VG_COLORSPACE_sRGB;
    surf->GLColorspace = EGL_GL_COLORSPACE_LINEAR_KHR;
@@ -358,7 +359,7 @@ _eglQuerySurface(_EGLDriver *drv, _EGLDisplay *dpy, _EGLSurface *surface,
       *value = surface->SwapBehavior;
       break;
    case EGL_RENDER_BUFFER:
-      *value = surface->RenderBuffer;
+      *value = surface->RequestedRenderBuffer;
       break;
    case EGL_PIXEL_ASPECT_RATIO:
       *value = surface->AspectRatio;

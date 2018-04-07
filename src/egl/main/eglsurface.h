@@ -67,7 +67,10 @@ struct _egl_surface
    EGLenum TextureTarget;
    EGLBoolean MipmapTexture;
    EGLBoolean LargestPbuffer;
-   EGLenum RenderBuffer;
+
+   EGLenum RequestedRenderBuffer; /**< EGL_RENDER_BUFFER */
+   EGLenum ActiveRenderBuffer;
+
    EGLenum VGAlphaFormat;
    EGLenum VGColorspace;
    EGLenum GLColorspace;
