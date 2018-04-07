@@ -35,6 +35,8 @@ AM_CFLAGS = \
 	$(VISIBILITY_CFLAGS) \
 	$(LIBDRM_CFLAGS) \
 	$(EGL_CFLAGS) \
+	-DDEBUG \
+	-UNDEBUG \
 	-D_EGL_NATIVE_PLATFORM=$(EGL_NATIVE_PLATFORM)
 
 # Depending on whether libglvnd is enabled, we'll build the EGL library as
