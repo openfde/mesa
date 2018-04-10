@@ -786,6 +786,17 @@ _eglChooseConfig(_EGLDriver *drv, _EGLDisplay *disp, const EGLint *attrib_list,
 {
    _EGLConfig criteria;
 
+   _eglLog(_EGL_DEBUG, "%s: dump attrib_list", __func__);
+   if (attrib_list) {
+      for (size_t i = 0; attrib_list[i] != EGL_NONE; i += 2) {
+         _eglLog(_EGL_DEBUG, "    0x%x, 0x%x", attrib_list[i], attrib_list[i + 1]);
+      }
+      _eglLog(_EGL_DEBUG, "    EGL_NONE");
+   } else {
+      _eglLog(_EGL_DEBUG, "    NULL");
+   }
+
+
    if (!_eglParseConfigAttribList(&criteria, disp, attrib_list))
       return _eglError(EGL_BAD_ATTRIBUTE, "eglChooseConfig");
 
