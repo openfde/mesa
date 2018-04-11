@@ -460,6 +460,7 @@ static const struct dri2_extension_match optional_core_extensions[] = {
    { __DRI2_RENDERER_QUERY, 1, offsetof(struct dri2_egl_display, rendererQuery) },
    { __DRI2_INTEROP, 1, offsetof(struct dri2_egl_display, interop) },
    { __DRI_IMAGE, 1, offsetof(struct dri2_egl_display, image) },
+   { __DRI_MUTABLE_RENDER_BUFFER_DRIVER, 1, offsetof(struct dri2_egl_display, mutable_render_buffer) },
    { NULL, 0, 0 }
 };
 
@@ -1591,13 +1592,21 @@ dri2_make_current(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *dsurf,
    }
 
    if (dsurf && dsurf->Type == EGL_WINDOW_BIT) {
-      /* If the EGLConfig supported EGL_WINDOW_BIT, then its dri_config is
-       * double-buffered.
-       *
-       * This attribute is independent of render buffer chosen by the
-       * client API, according to the EGL 1.5 spec.
-       */
-      dsurf->ActiveRenderBuffer = EGL_BACK_BUFFER;
+      if (_eglSurfaceHasMutableRenderBufferBit(dsurf)) {
+         __DRIdrawable *drawable = dri2_dpy->vtbl->get_dri_drawable(dsurf);
+         bool mode = (dsurf->ActiveRenderBuffer == EGL_SINGLE_BUFFER);
+
+         dri2_dpy->vtbl->set_shared_buffer_mode(disp, dsurf, mode);
+         dri2_dpy->mutable_render_buffer->setSharedBufferMode(drawable, mode);
+      } else {
+         /* If the EGLConfig supported EGL_WINDOW_BIT, then its dri_config is
+          * double-buffered.
+          *
+          * This attribute is independent of render buffer chosen by the
+          * client API, according to the EGL 1.5 spec.
+          */
+         dsurf->ActiveRenderBuffer = EGL_BACK_BUFFER;
+      }
    }
 
    return EGL_TRUE;

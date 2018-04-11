@@ -68,7 +68,23 @@ struct _egl_surface
    EGLBoolean MipmapTexture;
    EGLBoolean LargestPbuffer;
 
-   EGLenum RequestedRenderBuffer; /**< EGL_RENDER_BUFFER */
+   /* This is the user-requested value of EGL_RENDER_BUFFER, which can differ
+    * from the actual render buffer used by the context.  Normally, the
+    * attribute is immutable and chosen by the user at surface creation-time.
+    * However, EGL_KHR_mutable_render_buffer allows the user to change it via
+    * eglSurfaceAttrib. in which case eglQuerySurface(EGL_RENDER_BUFFER) will
+    * immediately afterwards return the requested value but the actual render
+    * buffer used by the context does not change until completion of the next
+    * eglSwapBuffers call.
+    *
+    * From the EGL_KHR_mutable_render_buffer spec (v12):
+    *
+    *    Querying EGL_RENDER_BUFFER returns the buffer which client API
+    *    rendering is requested to use. For a window surface, this is the
+    *    attribute value specified when the surface was created or last set
+    *    via eglSurfaceAttrib.
+    */
+   EGLenum RequestedRenderBuffer;
    EGLenum ActiveRenderBuffer;
 
    EGLenum VGAlphaFormat;
@@ -127,6 +143,11 @@ _eglReleaseTexImage(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *surf, EGLin
 extern EGLBoolean
 _eglSwapInterval(_EGLDriver *drv, _EGLDisplay *dpy, _EGLSurface *surf, EGLint interval);
 
+extern EGLBoolean
+_eglSurfaceHasMutableRenderBufferBit(_EGLSurface *surf);
+
+extern EGLBoolean
+_eglSurfaceInSharedBufferMode(_EGLSurface *surf);
 
 /**
  * Increment reference count for the surface.
