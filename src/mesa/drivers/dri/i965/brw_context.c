@@ -285,7 +285,7 @@ intel_glFlush(struct gl_context *ctx)
 
    intel_batchbuffer_flush(brw);
    intel_flush_front(ctx);
-
+   brw_display_shared_buffer(brw);
    brw->need_flush_throttle = true;
 }
 
