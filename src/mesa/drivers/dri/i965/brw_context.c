@@ -238,6 +238,47 @@ intel_flush_front(struct gl_context *ctx)
 }
 
 static void
+brw_display_shared_buffer(struct brw_context *brw)
+{
+   struct gl_context *ctx = &brw->ctx;
+   __DRIcontext *dri_context = brw->driContext;
+   __DRIdrawable *dri_drawable = dri_context->driDrawablePriv;
+   __DRIscreen *dri_screen = brw->screen->driScrnPriv;
+
+   intel_logd("%s: enter", __func__);
+   intel_logd("%s: brw->is_shared_buffer_dirty=%d",
+              __func__, brw->is_shared_buffer_dirty);
+
+   if (!brw->is_shared_buffer_bound) {
+      intel_logd("%s: return: brw->is_shared_buffer_bound=%d",
+                 __func__, brw->is_shared_buffer_bound);
+      return;
+   }
+
+   if (!brw->is_shared_buffer_dirty) {
+      intel_logd("%s: return: brw->is_shared_buffer_dirty=%d",
+                 __func__, brw->is_shared_buffer_dirty);
+      return;
+   }
+
+   int fence_fd = -1;
+   if (intel_batchbuffer_flush_fence(brw, -1, &fence_fd)) {
+      intel_logd("%s: return: intel_batchbuffer_flush failed", __func__);
+      return;
+   }
+
+   intel_logd("%s: fence_fd=%d", __func__, fence_fd);
+
+   assert(dri_screen->mutableRenderBuffer.loader);
+   dri_screen->mutableRenderBuffer.loader->displaySharedBuffer(dri_drawable,
+                                                               fence_fd,
+                                                               dri_drawable->loaderPrivate);
+
+   brw->is_shared_buffer_dirty = false;
+   intel_logd("%s: return: success", __func__);
+}
+
+static void
 intel_glFlush(struct gl_context *ctx)
 {
    struct brw_context *brw = brw_context(ctx);
