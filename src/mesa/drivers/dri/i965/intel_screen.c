@@ -1423,6 +1423,12 @@ static const __DRIrobustnessExtension dri2Robustness = {
    .base = { __DRI2_ROBUSTNESS, 1 }
 };
 
+static void
+brw_set_shared_buffer_mode(__DRIdrawable *drawable, bool mode)
+{
+   /* TODO(chadv): Toggle compression */
+}
+
 static const __DRIextension *screenExtensions[] = {
     &intelTexBufferExtension.base,
     &intelFenceExtension.base,
