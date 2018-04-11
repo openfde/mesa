@@ -1644,7 +1644,8 @@ intel_update_image_buffer(struct brw_context *intel,
 
    struct intel_mipmap_tree *mt =
       intel_miptree_create_for_dri_image(intel, buffer, GL_TEXTURE_2D,
-                                         intel_rb_format(rb), true);
+                                         intel_rb_format(rb), true,
+                                         fb->Visual.mutableRenderBuffer);
    if (!mt)
       return;
 
