@@ -292,6 +292,36 @@ droid_window_cancel_buffer(struct dri2_egl_surface *dri2_surf)
    }
 }
 
+static bool
+droid_set_shared_buffer_mode(_EGLDisplay *disp, _EGLSurface *surf, bool mode)
+{
+#if ANDROID_API_LEVEL >= 24
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
+   struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surf);
+   struct ANativeWindow *window = dri2_surf->window;
+   __DRIdrawable *dri_draw = dri2_dpy->vtbl->get_dri_drawable(surf);
+
+   assert(surf->Type == EGL_WINDOW_BIT);
+   assert(_eglSurfaceHasMutableRenderBufferBit(&dri2_surf->base));
+
+   _eglLog(_EGL_DEBUG, "call native_window_set_shared_buffer_mode"
+           "(window=%p, mode=%d)", window, mode);
+
+   dri2_dpy->mutable_render_buffer->setSharedBufferMode(dri_draw, mode);
+
+   if (native_window_set_shared_buffer_mode(window, mode)) {
+      _eglLog(_EGL_WARNING, "failed native_window_set_shared_buffer_mode"
+              "(window=%p, mode=%d)", window, mode);
+      return false;
+   }
+
+   return true;
+#else
+   _eglLog(_EGL_FATAL, "%s:%d: internal error: unreachable", __FILE__, __LINE__);
+   return false;
+#endif
+}
+
 static _EGLSurface *
 droid_create_surface(_EGLDriver *drv, _EGLDisplay *disp, EGLint type,
 		    _EGLConfig *conf, void *native_window,
@@ -557,6 +587,8 @@ droid_image_get_buffers(__DRIdrawable *driDrawable,
                   uint32_t buffer_mask,
                   struct __DRIimageList *images)
 {
+   _eglLog(_EGL_DEBUG, "%s: enter", __func__);
+
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
 
    images->image_mask = 0;
@@ -606,11 +638,28 @@ droid_query_buffer_age(_EGLDriver *drv,
 static EGLBoolean
 droid_swap_buffers(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *draw)
 {
+   _eglLog(_EGL_DEBUG, "%s: enter", __func__);
+
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(draw);
 
    if (dri2_surf->base.Type != EGL_WINDOW_BIT)
       return EGL_TRUE;
+
+   const bool has_mutable_rb = _eglSurfaceHasMutableRenderBufferBit(draw);
+
+   /* From the EGL_KHR_mutable_render_buffer spec (v12):
+    *
+    *    If surface is a single-buffered window, pixmap, or pbuffer surface
+    *    for which there is no pending change to the EGL_RENDER_BUFFER
+    *    attribute, eglSwapBuffers has no effect.
+    */
+   if (has_mutable_rb &&
+       draw->RequestedRenderBuffer == EGL_SINGLE_BUFFER &&
+       draw->ActiveRenderBuffer == EGL_SINGLE_BUFFER) {
+      _eglLog(_EGL_DEBUG, "%s: surface remains in shared buffer mode", __func__);
+      return EGL_TRUE;
+   }
 
    for (int i = 0; i < ARRAY_SIZE(dri2_surf->color_buffers); i++) {
       if (dri2_surf->color_buffers[i].age > 0)
@@ -625,6 +674,17 @@ droid_swap_buffers(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *draw)
 
    dri2_flush_drawable_for_swapbuffers(disp, draw);
 
+   /* Transition to back-buffer mode */
+   if (has_mutable_rb &&
+       draw->RequestedRenderBuffer == EGL_BACK_BUFFER &&
+       draw->ActiveRenderBuffer != draw->RequestedRenderBuffer)
+   {
+      _eglLog(_EGL_DEBUG, "%s: surface leaves shared buffer mode", __func__);
+      if (!droid_set_shared_buffer_mode(disp, draw, false))
+         return EGL_FALSE;
+      draw->ActiveRenderBuffer = EGL_BACK_BUFFER;
+   }
+
    /* dri2_surf->buffer can be null even when no error has occured. For
     * example, if the user has called no GL rendering commands since the
     * previous eglSwapBuffers, then the driver may have not triggered
@@ -635,6 +695,17 @@ droid_swap_buffers(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *draw)
       droid_window_enqueue_buffer(disp, dri2_surf);
 
    dri2_dpy->flush->invalidate(dri2_surf->dri_drawable);
+
+   /* Transition to shared-buffer mode */
+   if (has_mutable_rb &&
+       draw->RequestedRenderBuffer == EGL_SINGLE_BUFFER &&
+       draw->ActiveRenderBuffer != draw->RequestedRenderBuffer)
+   {
+      _eglLog(_EGL_DEBUG, "%s: surface enters shared buffer mode", __func__);
+      if (!droid_set_shared_buffer_mode(disp, draw, true))
+         return EGL_FALSE;
+      draw->ActiveRenderBuffer = EGL_SINGLE_BUFFER;
+   }
 
    return EGL_TRUE;
 }
@@ -1148,6 +1219,7 @@ static const struct dri2_egl_display_vtbl droid_display_vtbl = {
    .create_wayland_buffer_from_image = dri2_fallback_create_wayland_buffer_from_image,
    .get_sync_values = dri2_fallback_get_sync_values,
    .get_dri_drawable = dri2_surface_get_dri_drawable,
+   .set_shared_buffer_mode = droid_set_shared_buffer_mode,
 };
 
 static const __DRIdri2LoaderExtension droid_dri2_loader_extension = {
@@ -1170,14 +1242,81 @@ static const __DRIimageLoaderExtension droid_image_loader_extension = {
 static bool
 droid_is_shared_buffer(__DRIdrawable *driDrawable, void *loaderPrivate)
 {
-   return false;
+   struct dri2_egl_surface *dri2_surf = loaderPrivate;
+   _EGLSurface *surf = &dri2_surf->base;
+
+   return _eglSurfaceInSharedBufferMode(surf);
 }
 
 static void
-droid_display_shared_buffer(__DRIdrawable *driDrawable, int enqueue_fence_fd,
+droid_display_shared_buffer(__DRIdrawable *driDrawable, int fence_fd,
                             void *loaderPrivate)
 {
-   return;
+   struct dri2_egl_surface *dri2_surf = loaderPrivate;
+   struct ANativeWindowBuffer *old_buffer UNUSED = dri2_surf->buffer;
+
+   if (!droid_is_shared_buffer(driDrawable, loaderPrivate)) {
+      _eglLog(_EGL_WARNING, "%s: internal error: buffer is not shared",
+              __func__);
+      return;
+   }
+
+   if (fence_fd >= 0) {
+      /* The driver's fence is more recent than the surface's out fence, if it
+       * exists at all. So use the driver's fence.
+       */
+      if (dri2_surf->out_fence_fd >= 0) {
+         close(dri2_surf->out_fence_fd);
+         dri2_surf->out_fence_fd = -1;
+      }
+   } else if (dri2_surf->out_fence_fd >= 0) {
+      fence_fd = dri2_surf->out_fence_fd;
+      dri2_surf->out_fence_fd = -1;
+   }
+
+   if (dri2_surf->window->queueBuffer(dri2_surf->window, dri2_surf->buffer,
+                                      fence_fd)) {
+      _eglLog(_EGL_WARNING, "%s: ANativeWindow::queueBuffer failed", __func__);
+      close(fence_fd);
+      return;
+   }
+
+   fence_fd = -1;
+
+   if (dri2_surf->window->dequeueBuffer(dri2_surf->window, &dri2_surf->buffer,
+                                        &fence_fd)) {
+      /* Tear down the surface because it no longer has a back buffer. */
+      struct dri2_egl_display *dri2_dpy =
+         dri2_egl_display(dri2_surf->base.Resource.Display);
+
+      _eglLog(_EGL_WARNING, "%s: ANativeWindow::dequeueBuffer failed", __func__);
+      dri2_surf->base.Lost = true;
+      dri2_surf->buffer = NULL;
+      dri2_surf->back = NULL;
+
+      if (dri2_surf->dri_image_back) {
+         dri2_dpy->image->destroyImage(dri2_surf->dri_image_back);
+         dri2_surf->dri_image_back = NULL;
+      }
+
+      dri2_dpy->flush->invalidate(dri2_surf->dri_drawable);
+
+      return;
+   }
+
+   if (fence_fd < 0)
+      return;
+
+   /* Access to the buffer is controlled by a sync fence. Block on it.
+    *
+    * Ideally, we would submit the fence to the driver, and the driver would
+    * postpone command execution until it signalled. But DRI lacks API for
+    * that (as of 2018-04-11).
+    *
+    *  SYNC_IOC_WAIT waits forever if timeout < 0
+    */
+   sync_wait(fence_fd, -1);
+   close(fence_fd);
 }
 
 static const __DRImutableRenderBufferLoaderExtension droid_mutable_render_buffer_extension = {
@@ -1322,15 +1461,6 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *dpy)
 
    dri2_setup_screen(dpy);
 
-
-   /* Create configs *after* enabling extensions because presence of DRI
-    * driver extensions can affect the capabilities of EGLConfigs.
-    */
-   if (!droid_add_configs_for_visuals(drv, dpy)) {
-      err = "DRI2: failed to add configs";
-      goto cleanup;
-   }
-
    dpy->Extensions.ANDROID_framebuffer_target = EGL_TRUE;
    dpy->Extensions.ANDROID_image_native_buffer = EGL_TRUE;
    dpy->Extensions.ANDROID_recordable = EGL_TRUE;
@@ -1343,13 +1473,15 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *dpy)
 #if 1 /* ANDROID_API_LEVEL >= 24 */
    if (dri2_dpy->mutable_render_buffer)
       dpy->Extensions.KHR_mutable_render_buffer = EGL_TRUE;
-
-   _eglLog(_EGL_DEBUG, "%s: trigger dri2_dpy->mutable_render_buffer = 0x%p",
-           __func__, dri2_dpy->mutable_render_buffer);
-   _eglLog(_EGL_DEBUG, "%s: dpy->Extensions.KHR_mutable_render_buffer = 0x%p",
-           __func__, dpy->Extensions.KHR_mutable_render_buffer);
-
 #endif
+
+   /* Create configs *after* enabling extensions because presence of DRI
+    * driver extensions can affect the capabilities of EGLConfigs.
+    */
+   if (!droid_add_configs_for_visuals(drv, dpy)) {
+      err = "DRI2: failed to add configs";
+      goto cleanup;
+   }
 
    /* Fill vtbl last to prevent accidentally calling virtual function during
     * initialization.
