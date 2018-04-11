@@ -1983,7 +1983,7 @@ intel_screen_make_configs(__DRIscreen *dri_screen)
                                      num_depth_stencil_bits,
                                      back_buffer_modes, 2,
                                      singlesample_samples, 1,
-                                     false, false, false);
+                                     false, false, true);
       configs = driConcatConfigs(configs, new_configs);
    }
 
