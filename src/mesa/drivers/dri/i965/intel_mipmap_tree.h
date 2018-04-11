@@ -408,7 +408,8 @@ intel_miptree_create_for_dri_image(struct brw_context *brw,
                                    __DRIimage *image,
                                    GLenum target,
                                    mesa_format format,
-                                   bool is_winsys_image);
+                                   bool is_winsys_image,
+                                   bool is_mutable_render_buffer);
 
 bool
 intel_update_winsys_renderbuffer_miptree(struct brw_context *intel,

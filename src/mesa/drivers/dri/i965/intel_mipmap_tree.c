@@ -977,11 +977,16 @@ create_ccs_buf_for_image(struct brw_context *brw,
    return true;
 }
 
+/**
+ * Set 'is_mutable_render_buffer' if the image belongs to an EGLSurface whose
+ * EGL_SURFACE_TYPE is EGL_MUTABLE_RENDER_BUFFER_BIT_KHR.
+ */
 struct intel_mipmap_tree *
 intel_miptree_create_for_dri_image(struct brw_context *brw,
                                    __DRIimage *image, GLenum target,
                                    mesa_format format,
-                                   bool is_winsys_image)
+                                   bool is_winsys_image,
+                                   bool is_mutable_render_buffer)
 {
    if (image->planar_format && image->planar_format->nplanes > 1)
       return miptree_create_for_planar_image(brw, image, target);
@@ -1010,6 +1015,21 @@ intel_miptree_create_for_dri_image(struct brw_context *brw,
 
    enum intel_miptree_create_flags mt_create_flags = 0;
 
+   /* If this is an EGLSurface with EGL_SURFACE_TYPE ==
+    * EGL_MUTABLE_RENDER_BUFFER_BIT_KHR, then the user can toggle its
+    * EGL_RENDER_BUFFER state between EGL_BACK_BUFFER and EGL_SINGLE_BUFFER.
+    * When it's EGL_SINGLE_BUFFER, the compositor and the display may read the
+    * image unsynchronized. No eglSwapBuffers is required. Tearing is allowed,
+    * but not outright garbage. Therefore we disable aux compression.
+    *
+    * Ideally, we would dynamically toggle on/off the aux surface when the
+    * user toggles between EGL_BACK_BUFFER and EGL_SINGLE_BUFFER. The
+    * performance benefit is dubious, though, when considering how real apps
+    * use EGL_KHR_mutable_render_buffer, Performance measurements are needed.
+    */
+   if (is_mutable_render_buffer)
+      mt_create_flags |= MIPTREE_CREATE_NO_AUX;
+
    /* If this image comes in from a window system, we have different
     * requirements than if it comes in via an EGL import operation.  Window
     * system images can use any form of auxiliary compression we wish because
@@ -1019,6 +1039,13 @@ intel_miptree_create_for_dri_image(struct brw_context *brw,
     * modifier.
     */
    if (!is_winsys_image)
+      mt_create_flags |= MIPTREE_CREATE_NO_AUX;
+
+   /* HACK(chadv): Ensure that EGL_KHR_mutable_render_buffer produces correct
+    * rendering in EGL_SINGLE_BUFFER case by disabling compression for all
+    * winsys surfaces.
+    */
+   if (is_winsys_image)
       mt_create_flags |= MIPTREE_CREATE_NO_AUX;
 
    /* If we have a modifier which specifies aux, don't create one yet */
