@@ -711,6 +711,12 @@ struct brw_context
     */
    bool front_buffer_dirty;
 
+   /**
+    * TODO(chadv): doc
+    */
+   bool is_shared_buffer_bound;
+   bool is_shared_buffer_dirty;
+
    /** Framerate throttling: @{ */
    struct brw_bo *throttle_batch[2];
 
