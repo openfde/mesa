@@ -68,6 +68,8 @@
 #include "intel_tex.h"
 #include "intel_tex_obj.h"
 
+#include "intel/common/intel_log.h"
+
 #include "swrast_setup/swrast_setup.h"
 #include "tnl/tnl.h"
 #include "tnl/t_pipeline.h"
@@ -1410,6 +1412,17 @@ intel_prepare_render(struct brw_context *brw)
     */
    if (_mesa_is_front_buffer_drawing(ctx->DrawBuffer))
       brw->front_buffer_dirty = true;
+
+   intel_logd("%s: old brw->is_shared_buffer_dirty = %d",
+              __func__, brw->is_shared_buffer_dirty);
+
+   if (brw->is_shared_buffer_bound) {
+      /* Subsequent rendering will probably dirty the shared buffer. */
+      brw->is_shared_buffer_dirty = true;
+   }
+
+   intel_logd("%s: new brw->is_shared_buffer_dirty = %d",
+              __func__, brw->is_shared_buffer_dirty);
 }
 
 /**
@@ -1623,6 +1636,7 @@ intel_update_image_buffer(struct brw_context *intel,
                           __DRIimage *buffer,
                           enum __DRIimageBufferMask buffer_type)
 {
+   __DRIscreen *dri_screen = intel->screen->driScrnPriv;
    struct gl_framebuffer *fb = drawable->driverPrivate;
 
    if (!rb || !buffer->bo)
@@ -1721,4 +1735,15 @@ intel_update_image_buffers(struct brw_context *brw, __DRIdrawable *drawable)
                                 images.back,
                                 __DRI_IMAGE_BUFFER_BACK);
    }
+
+   intel_logd("%s: dri_sreen->mutableRenderBuffer.loader == %p",
+              __func__, dri_screen->mutableRenderBuffer.loader);
+
+   brw->is_shared_buffer_bound =
+      dri_screen->mutableRenderBuffer.loader &&
+      dri_screen->mutableRenderBuffer.loader->isSharedBuffer(drawable,
+                                                             drawable->loaderPrivate);
+
+   if (!brw->is_shared_buffer_bound)
+      brw->is_shared_buffer_dirty = false;
 }
