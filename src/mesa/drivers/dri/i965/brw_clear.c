@@ -34,6 +34,8 @@
 #include "intel_fbo.h"
 #include "intel_mipmap_tree.h"
 
+#include "intel/common/intel_log.h"
+
 #include "brw_context.h"
 #include "brw_blorp.h"
 #include "brw_defines.h"
@@ -271,8 +273,16 @@ brw_clear(struct gl_context *ctx, GLbitfield mask)
    if (!_mesa_check_conditional_render(ctx))
       return;
 
+   intel_logd("%s: mask=0x%x", __func__, mask);
+
    if (mask & (BUFFER_BIT_FRONT_LEFT | BUFFER_BIT_FRONT_RIGHT)) {
       brw->front_buffer_dirty = true;
+   }
+
+   if (brw->is_shared_buffer_bound &&
+       (mask & (BUFFER_BIT_BACK_LEFT | BUFFER_BIT_BACK_RIGHT |
+                BUFFER_BIT_FRONT_LEFT | BUFFER_BIT_FRONT_RIGHT))) {
+      brw->is_shared_buffer_dirty = true;
    }
 
    intel_prepare_render(brw);
