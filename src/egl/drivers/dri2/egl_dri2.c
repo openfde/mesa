@@ -460,6 +460,7 @@ static const struct dri2_extension_match optional_core_extensions[] = {
    { __DRI2_RENDERER_QUERY, 1, offsetof(struct dri2_egl_display, rendererQuery) },
    { __DRI2_INTEROP, 1, offsetof(struct dri2_egl_display, interop) },
    { __DRI_IMAGE, 1, offsetof(struct dri2_egl_display, image) },
+   { __DRI_MUTABLE_RENDER_BUFFER_DRIVER, 1, offsetof(struct dri2_egl_display, mutable_render_buffer) },
    { NULL, 0, 0 }
 };
 
@@ -1520,8 +1521,12 @@ static EGLBoolean
 dri2_make_current(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *dsurf,
                   _EGLSurface *rsurf, _EGLContext *ctx)
 {
+   _eglLog(_EGL_DEBUG, "%s: enter", __func__);
+
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_context *dri2_ctx = dri2_egl_context(ctx);
+   _EGLDisplay *old_disp = NULL;
+   struct dri2_egl_display *old_dri2_dpy = NULL;
    _EGLContext *old_ctx;
    _EGLSurface *old_dsurf, *old_rsurf;
    _EGLSurface *tmp_dsurf, *tmp_rsurf;
@@ -1538,6 +1543,11 @@ dri2_make_current(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *dsurf,
       return EGL_FALSE;
    }
 
+   if (old_ctx) {
+      old_disp = old_ctx->Resource.Display;
+      old_dri2_dpy = dri2_egl_display(old_disp);
+   }
+
    /* flush before context switch */
    if (old_ctx)
       dri2_gl_flush();
@@ -1551,6 +1561,13 @@ dri2_make_current(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *dsurf,
 
       if (old_dsurf)
          dri2_surf_update_fence_fd(old_ctx, disp, old_dsurf);
+
+      /* Disable shared buffer mode */
+      if (old_dsurf && _eglSurfaceInSharedBufferMode(old_dsurf) &&
+          old_dri2_dpy->vtbl->set_shared_buffer_mode) {
+         old_dri2_dpy->vtbl->set_shared_buffer_mode(old_disp, old_dsurf, false);
+      }
+
       dri2_dpy->core->unbindContext(old_cctx);
    }
 
@@ -1562,6 +1579,11 @@ dri2_make_current(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *dsurf,
       assert(&dri2_ctx->base == ctx &&
              tmp_dsurf == dsurf &&
              tmp_rsurf == rsurf);
+
+      if (old_dsurf && _eglSurfaceInSharedBufferMode(old_dsurf) &&
+          old_dri2_dpy->vtbl->set_shared_buffer_mode) {
+         old_dri2_dpy->vtbl->set_shared_buffer_mode(old_disp, old_dsurf, true);
+      }
 
       _eglPutSurface(dsurf);
       _eglPutSurface(rsurf);
@@ -1585,19 +1607,28 @@ dri2_make_current(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *dsurf,
       dri2_dpy->ref_count++;
 
    if (old_ctx) {
-      EGLDisplay old_disp = _eglGetDisplayHandle(old_ctx->Resource.Display);
       dri2_destroy_context(drv, disp, old_ctx);
       dri2_display_release(old_disp);
    }
 
    if (dsurf && dsurf->Type == EGL_WINDOW_BIT) {
-      /* If the EGLConfig supported EGL_WINDOW_BIT, then its dri_config is
-       * double-buffered.
-       *
-       * This attribute is independent of render buffer chosen by the
-       * client API, according to the EGL 1.5 spec.
-       */
-      dsurf->ActiveRenderBuffer = EGL_BACK_BUFFER;
+      if (_eglSurfaceHasMutableRenderBufferBit(dsurf) &&
+          dri2_dpy->vtbl->set_shared_buffer_mode) {
+         /* Always update the shared buffer mode, even when ...
+          *
+          * TODO(chadv): explain
+          */
+         bool mode = (dsurf->ActiveRenderBuffer == EGL_SINGLE_BUFFER);
+         dri2_dpy->vtbl->set_shared_buffer_mode(disp, dsurf, mode);
+      } else {
+         /* If the EGLConfig supported EGL_WINDOW_BIT, then its dri_config is
+          * double-buffered.
+          *
+          * This attribute is independent of render buffer chosen by the
+          * client API, according to the EGL 1.5 spec.
+          */
+         dsurf->ActiveRenderBuffer = EGL_BACK_BUFFER;
+      }
    }
 
    return EGL_TRUE;
