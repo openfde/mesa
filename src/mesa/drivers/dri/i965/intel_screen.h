@@ -81,6 +81,7 @@ struct intel_screen
 #define KERNEL_ALLOWS_COMPUTE_DISPATCH              (1<<4)
 #define KERNEL_ALLOWS_EXEC_CAPTURE                  (1<<5)
 #define KERNEL_ALLOWS_EXEC_BATCH_FIRST              (1<<6)
+#define KERNEL_ALLOWS_EXEC_ASYNC                    (1<<7)
 
    struct brw_bufmgr *bufmgr;
 
