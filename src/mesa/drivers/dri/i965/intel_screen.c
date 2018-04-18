@@ -2460,6 +2460,10 @@ __DRIconfig **intelInitScreen2(__DRIscreen *dri_screen)
       screen->cmd_parser_version = 0;
    }
 
+    if (intel_get_boolean(screen, I915_PARAM_HAS_EXEC_ASYNC)) {
+       screen->kernel_features |= KERNEL_ALLOWS_EXEC_ASYNC;
+    }
+
    /* Kernel 4.13 retuired for exec object capture */
    if (intel_get_boolean(screen, I915_PARAM_HAS_EXEC_CAPTURE)) {
       screen->kernel_features |= KERNEL_ALLOWS_EXEC_CAPTURE;
