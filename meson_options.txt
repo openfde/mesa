@@ -324,3 +324,14 @@ option(
   value : true,
   description : 'Enable direct rendering in GLX and EGL for DRI',
 )
+option('egl-lib-suffix',
+  type : 'string',
+  value : '',
+  description : 'Suffix to append to EGL library name.  Default: none.'
+)
+option(
+  'gles-lib-suffix',
+  type : 'string',
+  value : '',
+  description : 'Suffix to append to GLES library names.  Default: none.'
+)
