@@ -1624,7 +1624,10 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *disp)
     */
    if (disp->Extensions.ANDROID_native_fence_sync) {
       disp->Extensions.EXT_buffer_age = EGL_TRUE;
-#if ANDROID_API_LEVEL >= 23
+#if 0
+      /* TODO(chadversary): Re-enable EGL_KHR_partial_update after we diagnose
+       * why it fails the Android CTS on Chrome OS.
+       */
       disp->Extensions.KHR_partial_update = EGL_TRUE;
 #endif
    }
