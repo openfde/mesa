@@ -68,6 +68,16 @@ static bool
 radv_use_tc_compat_htile_for_image(struct radv_device *device,
 				   const VkImageCreateInfo *pCreateInfo)
 {
+	/* Disable texture compatible HTILE on Stoney. We have the following
+	 * failing tests:
+	 * dEQP-VK.glsl.builtin_var.fragdepth.*_list_d32_sfloat_multisample_8
+	 * dEQP-VK.pipeline.render_to_image.*_unorm_d32_sfloat_s8_uint
+	 *
+	 * TODO: find underlying cause, this should work theoretically.
+	 */
+	if (device->physical_device->rad_info.family == CHIP_STONEY)
+		return false;
+
 	/* TC-compat HTILE is only available for GFX8+. */
 	if (device->physical_device->rad_info.chip_class < VI)
 		return false;
