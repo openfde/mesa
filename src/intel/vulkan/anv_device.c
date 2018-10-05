@@ -617,6 +617,30 @@ VkResult anv_CreateInstance(
    if (pCreateInfo->pApplicationInfo) {
       const VkApplicationInfo *app = pCreateInfo->pApplicationInfo;
 
+#if defined(ANDROID) && ANDROID_API_LEVEL <= 25
+      if (app->apiVersion != 0) {
+         /* Workaround for Android Nougat.
+          *
+          * The Vulkan loader and Vulkan CTS in Nougat expect vkCreateInstance's
+          * behavior regarding VkApplicationInfo::apiVersion to conform to the
+          * Vulkan 1.0 spec, not the Vulkan 1.1 spec. We assume that applications
+          * that target Nougat have the same expectation.
+          *
+          * Specifically, the Vulkan loader in Nougat does not have
+          * vkEnumerateInstanceVersion.
+          */
+         uint32_t max_instance_version, app_no_patch, max_no_patch;
+
+         anv_EnumerateInstanceVersion(&max_instance_version);
+         app_no_patch = app->apiVersion & 0xfffff000;
+         max_no_patch = max_instance_version & 0xfffff000;
+         if (app_no_patch < VK_MAKE_VERSION(1, 0, 0) ||
+             app_no_patch > max_no_patch) {
+            return vk_error(VK_ERROR_INCOMPATIBLE_DRIVER);
+         }
+      }
+#endif
+
       instance->app_info.app_name =
          vk_strdup(&instance->alloc, app->pApplicationName,
                    VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
