@@ -759,7 +759,8 @@ static boolean si_texture_get_handle(struct pipe_screen* screen,
 		 * disable it for external clients that want write
 		 * access.
 		 */
-		if (usage & PIPE_HANDLE_USAGE_SHADER_WRITE && tex->dcc_offset) {
+		if ((usage & (PIPE_HANDLE_USAGE_SHADER_WRITE | PIPE_HANDLE_USAGE_FRAMEBUFFER_WRITE))
+		    && tex->dcc_offset) {
 			if (si_texture_disable_dcc(sctx, tex)) {
 				update_metadata = true;
 				/* si_texture_disable_dcc flushes the context */
