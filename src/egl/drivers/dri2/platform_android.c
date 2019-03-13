@@ -1283,6 +1283,21 @@ static const __DRIextension *droid_dri2_loader_extensions[] = {
 };
 #endif /* HAVE_DRM_GRALLOC */
 
+static const __DRIswrastLoaderExtension swrast_loader_extension = {
+   .base            = { __DRI_SWRAST_LOADER, 1 },
+   .getDrawableInfo = NULL,
+   .putImage        = NULL,
+   .getImage        = NULL,
+};
+
+static const __DRIextension *swrast_loader_extensions[] = {
+   &swrast_loader_extension.base,
+   &droid_image_loader_extension.base,
+   &image_lookup_extension.base,
+   &use_invalidate.base,
+   NULL,
+};
+
 static void
 droid_display_shared_buffer(__DRIdrawable *driDrawable, int fence_fd,
                             void *loaderPrivate)
@@ -1374,6 +1389,22 @@ droid_load_driver(_EGLDisplay *disp, bool swrast)
    const char *err;
 
    dri2_dpy->driver_name = loader_get_driver_for_fd(dri2_dpy->fd);
+   char *driver_name = loader_get_driver_for_fd(dri2_dpy->fd);
+   if (swrast) {
+         /* Use kms swrast only with vgem / virtio_gpu.
+          * virtio-gpu fallbacks to software rendering when 3D features
+          * are unavailable since 6c5ab, and kms_swrast is more
+          * feature complete than swrast.
+          */
+         if (strcmp(driver_name, "vgem") == 0 ||
+             strcmp(driver_name, "virtio_gpu") == 0)
+            dri2_dpy->driver_name = strdup("kms_swrast");
+         free(driver_name);
+   } else {
+         /* Use the given hardware driver */
+         dri2_dpy->driver_name = driver_name;
+   }
+
    if (dri2_dpy->driver_name == NULL)
       return false;
 
@@ -1384,7 +1415,8 @@ droid_load_driver(_EGLDisplay *disp, bool swrast)
        /* Handle control nodes using __DRI_DRI2_LOADER extension and GEM names
         * for backwards compatibility with drm_gralloc. (Do not use on new
         * systems.) */
-       dri2_dpy->loader_extensions = droid_dri2_loader_extensions;
+       dri2_dpy->loader_extensions = (swrast) ? swrast_loader_extensions :
+                                                droid_dri2_loader_extensions;
        if (!dri2_load_driver(disp)) {
           err = "DRI2: failed to load driver";
           goto error;
@@ -1394,7 +1426,8 @@ droid_load_driver(_EGLDisplay *disp, bool swrast)
        goto error;
 #endif
    } else {
-       dri2_dpy->loader_extensions = droid_image_loader_extensions;
+       dri2_dpy->loader_extensions = (swrast) ? swrast_loader_extensions :
+                                                droid_image_loader_extensions;
        if (!dri2_load_driver_dri3(disp)) {
           err = "DRI3: failed to load driver";
           goto error;
