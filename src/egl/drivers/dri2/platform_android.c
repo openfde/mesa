@@ -1584,9 +1584,10 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *disp)
    disp->DriverData = (void *) dri2_dpy;
 
 #ifdef HAVE_DRM_GRALLOC
-   if (!droid_open_device_drm_gralloc(disp, false)) {
+   if (!droid_open_device_drm_gralloc(disp, false) &&
+       !droid_open_device_drm_gralloc(disp, true)) {
 #else
-   if (!droid_open_device(disp, false)) {
+   if (!droid_open_device(disp, false) && !droid_open_device(disp, true)) {
 #endif
       err = "DRI2: failed to open device";
       goto cleanup;
