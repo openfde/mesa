@@ -2571,7 +2571,7 @@ void anv_FreeMemory(
 
    anv_bo_cache_release(device, &device->bo_cache, mem->bo);
 
-#ifdef ANDROID
+#if defined(ANDROID) && ANDROID_API_LEVEL >= 26
    if (mem->ahw)
       AHardwareBuffer_release(mem->ahw);
 #endif
