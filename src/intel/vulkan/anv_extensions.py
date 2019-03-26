@@ -134,8 +134,8 @@ EXTENSIONS = [
     Extension('VK_EXT_shader_stencil_export',             1, 'device->info.gen >= 9'),
     Extension('VK_EXT_transform_feedback',                1, True),
     Extension('VK_EXT_vertex_attribute_divisor',          3, True),
-    Extension('VK_GOOGLE_decorate_string',                1, True),
-    Extension('VK_GOOGLE_hlsl_functionality1',            1, True),
+    Extension('VK_GOOGLE_decorate_string',                1, False),
+    Extension('VK_GOOGLE_hlsl_functionality1',            1, False),
 ]
 
 class VkVersion:
