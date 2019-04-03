@@ -3788,7 +3788,7 @@ intel_miptree_map(struct brw_context *brw,
       intel_miptree_map_depthstencil(brw, mt, map, level, slice);
    } else if (use_intel_mipree_map_blit(brw, mt, map)) {
       intel_miptree_map_blit(brw, mt, map, level, slice);
-   } else if (mt->surf.tiling != ISL_TILING_LINEAR && devinfo->gen > 4) {
+   } else if (mt->surf.tiling != ISL_TILING_LINEAR && devinfo->gen > 8) {
       intel_miptree_map_tiled_memcpy(brw, mt, map, level, slice);
 #if defined(USE_SSE41)
    } else if (!(mode & GL_MAP_WRITE_BIT) &&
