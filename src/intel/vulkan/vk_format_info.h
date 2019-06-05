@@ -48,6 +48,7 @@ vk_format_from_android(unsigned android_format)
    case AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM:
       return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
    case HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
+   case HAL_PIXEL_FORMAT_YCbCr_420_888:
       return VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
    case AHARDWAREBUFFER_FORMAT_BLOB:
    default:
@@ -70,7 +71,7 @@ android_format_from_vk(unsigned vk_format)
    case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
       return AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM;
    case VK_FORMAT_G8_B8R8_2PLANE_420_UNORM:
-      return HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL;
+      return HAL_PIXEL_FORMAT_YCbCr_420_888;
    default:
       return AHARDWAREBUFFER_FORMAT_BLOB;
    }
