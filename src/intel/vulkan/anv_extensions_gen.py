@@ -158,7 +158,16 @@ anv_physical_device_api_version(struct anv_physical_device *device)
 %for version in API_VERSIONS:
     if (!(${version.enable}))
         return version;
+
     version = ${version.version.c_vk_version()};
+
+#if defined(ANDROID_API_LEVEL) && ANDROID_API_LEVEL < 28
+    /* Limit the version 1.0 on Android earlier than Pie. The Nougat and Oreo
+     * CTS reject Vulkan 1.1 in test
+     * android.graphics.cts.VulkanFeaturesTest#testVulkanHardwareFeatures.
+     */
+    version = MIN2(version, VK_MAKE_VERSION(1, 0, 3));
+#endif
 
 %endfor
     return version;
