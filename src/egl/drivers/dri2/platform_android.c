@@ -1139,6 +1139,9 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
       { HAL_PIXEL_FORMAT_RGBA_8888, { 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000 } },
       { HAL_PIXEL_FORMAT_RGBX_8888, { 0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000 } },
       { HAL_PIXEL_FORMAT_RGB_565,   { 0x0000f800, 0x000007e0, 0x0000001f, 0x00000000 } },
+      /* This must be after HAL_PIXEL_FORMAT_RGBA_8888, we only keep BGRA
+       * visual if it turns out RGBA visual is not available.
+       */
       { HAL_PIXEL_FORMAT_BGRA_8888, { 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000 } },
    };
 
@@ -1163,7 +1166,13 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
     * (chadversary) testing on Android Nougat, this was good enough to pacify
     * the buggy clients.
     */
+   bool has_rgba = false;
    for (int i = 0; i < ARRAY_SIZE(visuals); i++) {
+      /* Only enable BGRA configs when RGBA is not available. BGRA configs are
+       * buggy on stock Android.
+       */
+      if (visuals[i].format == HAL_PIXEL_FORMAT_BGRA_8888 && has_rgba)
+         continue;
       for (int j = 0; dri2_dpy->driver_configs[j]; j++) {
          const EGLint surface_type = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;
 
@@ -1185,6 +1194,8 @@ droid_add_configs_for_visuals(_EGLDriver *drv, _EGLDisplay *dpy)
             format_count[i]++;
          }
       }
+      if (visuals[i].format == HAL_PIXEL_FORMAT_RGBA_8888 && format_count[i])
+         has_rgba = true;
    }
 
    for (int i = 0; i < ARRAY_SIZE(format_count); i++) {
