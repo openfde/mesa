@@ -696,8 +696,6 @@ VkResult anv_CreateInstance(
    instance->pipeline_cache_enabled =
       env_var_as_boolean("ANV_ENABLE_PIPELINE_CACHE", true);
 
-   _mesa_locale_init();
-
    VG(VALGRIND_CREATE_MEMPOOL(instance, 0, false));
 
    *pInstance = anv_instance_to_handle(instance);
@@ -726,8 +724,6 @@ void anv_DestroyInstance(
    VG(VALGRIND_DESTROY_MEMPOOL(instance));
 
    vk_debug_report_instance_destroy(&instance->debug_report_callbacks);
-
-   _mesa_locale_fini();
 
    vk_free(&instance->alloc, instance);
 }
