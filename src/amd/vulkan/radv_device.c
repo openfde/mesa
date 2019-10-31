@@ -584,8 +584,6 @@ VkResult radv_CreateInstance(
 		return vk_error(instance, result);
 	}
 
-	_mesa_locale_init();
-
 	VG(VALGRIND_CREATE_MEMPOOL(instance, 0, false));
 
 	radv_handle_per_app_options(instance, pCreateInfo->pApplicationInfo);
@@ -609,8 +607,6 @@ void radv_DestroyInstance(
 	}
 
 	VG(VALGRIND_DESTROY_MEMPOOL(instance));
-
-	_mesa_locale_fini();
 
 	vk_debug_report_instance_destroy(&instance->debug_report_callbacks);
 
