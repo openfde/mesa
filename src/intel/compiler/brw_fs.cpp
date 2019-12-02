@@ -7600,8 +7600,16 @@ brw_compile_fs(const struct brw_compiler *compiler, void *log_data,
       prog_data->reg_blocks_8 = brw_register_blocks(v8.grf_used);
    }
 
+   bool force_simd8 = false;
+
+   /* Force simd8 with dual source blending on gen8.
+   * https://gitlab.freedesktop.org/mesa/mesa/issues/1917
+   */
+   if (devinfo->gen == 8 && prog_data->dual_src_blend)
+      force_simd8 = true;
+
    if (v8.max_dispatch_width >= 16 &&
-       likely(!(INTEL_DEBUG & DEBUG_NO16) || use_rep_send)) {
+       likely(!(INTEL_DEBUG & DEBUG_NO16) || use_rep_send) && !force_simd8) {
       /* Try a SIMD16 compile */
       fs_visitor v16(compiler, log_data, mem_ctx, key,
                      &prog_data->base, prog, shader, 16,
