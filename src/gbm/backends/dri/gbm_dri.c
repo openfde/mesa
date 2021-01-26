@@ -1109,7 +1109,8 @@ gbm_dri_bo_create(struct gbm_device *gbm,
    struct gbm_dri_device *dri = gbm_dri_device(gbm);
    struct gbm_dri_bo *bo;
    int dri_format;
-   unsigned dri_use = 0;
+   unsigned dri_use = 0, i;
+   bool has_valid_modifier;
 
    /* Callers of this may specify a modifier, or a dri usage, but not both. The
     * newer modifier interface deprecates the older usage flags.
@@ -1151,7 +1152,6 @@ gbm_dri_bo_create(struct gbm_device *gbm,
    if (modifiers) {
       if (!dri->image || dri->image->base.version < 14 ||
           !dri->image->createImageWithModifiers) {
-         fprintf(stderr, "Modifiers specified, but DRI is too old\n");
          errno = ENOSYS;
          goto failed;
       }
@@ -1162,8 +1162,14 @@ gbm_dri_bo_create(struct gbm_device *gbm,
        * the check here is a convenient debug check likely pointing at whatever
        * interface the client is using to build its modifier list.
        */
-      if (count == 1 && modifiers[0] == DRM_FORMAT_MOD_INVALID) {
-         fprintf(stderr, "Only invalid modifier specified\n");
+      has_valid_modifier = false;
+      for (i = 0; i < count; i++) {
+         if (modifiers[i] != DRM_FORMAT_MOD_INVALID) {
+            has_valid_modifier = true;
+            break;
+         }
+      }
+      if (!has_valid_modifier) {
          errno = EINVAL;
          goto failed;
       }
