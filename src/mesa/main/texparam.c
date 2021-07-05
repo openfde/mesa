@@ -264,6 +264,13 @@ set_tex_parameteri(struct gl_context *ctx,
    }
 
    switch (pname) {
+   case GL_SYNC_CONDITION:
+      if (!!texObj->SyncCondition == !!params[0])
+         return GL_FALSE;
+      texObj->SyncCondition = !!params[0];
+      return GL_TRUE;
+   case GL_SYNC_STATUS:
+      return GL_TRUE;
    case GL_TEXTURE_MIN_FILTER:
       if (!_mesa_target_allows_setting_sampler_parameters(texObj->Target))
          goto invalid_dsa;

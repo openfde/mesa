@@ -566,6 +566,10 @@ struct pipe_resource
    unsigned bind;            /**< bitmask of PIPE_BIND_x */
    unsigned flags;           /**< bitmask of PIPE_RESOURCE_FLAG_x */
 
+   /* Hack for avoiding sync on v3d */
+   unsigned sync_condition;
+   unsigned sync_status;
+
    /**
     * For planar images, ie. YUV EGLImage external, etc, pointer to the
     * next plane.

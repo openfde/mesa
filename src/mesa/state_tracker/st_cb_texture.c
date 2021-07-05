@@ -3280,6 +3280,12 @@ st_TexParameter(struct gl_context *ctx,
        */
       st_texture_release_all_sampler_views(st, stObj);
       break;
+   case GL_SYNC_CONDITION:
+      stObj->pt->sync_condition = texObj->SyncCondition;
+      break;
+   case GL_SYNC_STATUS:
+      stObj->pt->sync_status = 1;
+      break;
    default:
       ; /* nothing */
    }

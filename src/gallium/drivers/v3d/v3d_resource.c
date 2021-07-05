@@ -962,7 +962,9 @@ v3d_update_shadow_texture(struct pipe_context *pctx,
 
         assert(view->texture != pview->texture);
 
-        if (shadow->writes == orig->writes && orig->bo->private)
+        if (shadow->writes == orig->writes &&
+            orig->base.sync_status == 0 &&
+            (orig->bo->private || orig->base.sync_condition))
                 return;
 
         perf_debug("Updating %dx%d@%d shadow for linear texture\n",
@@ -1005,6 +1007,7 @@ v3d_update_shadow_texture(struct pipe_context *pctx,
         }
 
         shadow->writes = orig->writes;
+        orig->base.sync_status = 0;
 }
 
 static struct pipe_surface *
