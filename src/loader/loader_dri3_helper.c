@@ -282,7 +282,7 @@ dri3_update_max_num_back(struct loader_dri3_drawable *draw)
       if (draw->swap_interval == 0)
          new_max = 4;
       else
-         new_max = 3;
+         new_max = 2;
 
       assert(new_max <= LOADER_DRI3_MAX_BACK);
 
