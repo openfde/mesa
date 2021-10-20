@@ -81,6 +81,9 @@ struct v3d_screen {
         bool has_cache_flush;
         bool nonmsaa_texture_size_limit;
 
+        /* Are we running in an X session? */
+        bool has_x_session;
+
         struct v3d_simulator_file *sim_file;
 };
 

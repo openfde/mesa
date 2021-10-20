@@ -56,6 +56,16 @@ endif
 
 v3d_versions = ['33', '41']
 
+v3d_deps = [dep_v3dv3, dep_libdrm, dep_valgrind, idep_nir_headers]
+
+if with_platform_x11
+  v3d_deps += dep_xcb
+endif
+
+if with_platform_wayland
+  v3d_deps += dep_wayland_client
+endif
+
 per_version_libs = []
 foreach ver : v3d_versions
   per_version_libs += static_library(
@@ -67,7 +77,7 @@ foreach ver : v3d_versions
     ],
     c_args : [v3d_args, '-DV3D_VERSION=' + ver],
     gnu_symbol_visibility : 'hidden',
-    dependencies : [dep_v3dv3, dep_libdrm, dep_valgrind, idep_nir_headers],
+    dependencies : v3d_deps,
 )
 
 endforeach
@@ -86,7 +96,7 @@ libv3d_neon = static_library(
   ],
   c_args : [v3d_args, v3d_neon_c_args],
   gnu_symbol_visibility : 'hidden',
-  dependencies : [dep_v3dv3, dep_libdrm, dep_valgrind, idep_nir_headers],
+  dependencies : v3d_deps,
 )
 
 libv3d = static_library(
@@ -102,7 +112,7 @@ libv3d = static_library(
   c_args : [v3d_args],
   cpp_args : [v3d_args],
   gnu_symbol_visibility : 'hidden',
-  dependencies : [dep_v3dv3, dep_libdrm, dep_valgrind, idep_nir_headers],
+  dependencies : v3d_deps,
   link_with: [per_version_libs, libv3d_neon],
 )
 

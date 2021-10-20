@@ -47,6 +47,42 @@
 #include "compiler/v3d_compiler.h"
 #include "drm-uapi/drm_fourcc.h"
 
+#ifdef HAVE_WAYLAND_PLATFORM
+#include <wayland-client.h>
+#endif
+
+#ifdef HAVE_X11_PLATFORM
+#include <xcb/xcb.h>
+#endif
+
+static bool
+check_x_session()
+{
+        bool xcb_connection = false;
+
+#ifdef HAVE_WAYLAND_PLATFORM
+        struct wl_display *display;
+
+        display = wl_display_connect(NULL);
+
+        if (display) {
+                wl_display_disconnect(display);
+                return xcb_connection;
+        }
+#endif
+
+#ifdef HAVE_X11_PLATFORM
+        xcb_connection_t *conn;
+
+        conn = xcb_connect(NULL, NULL);
+
+        if (!xcb_connection_has_error(conn))
+                xcb_connection = true;
+        xcb_disconnect(conn);
+#endif
+        return xcb_connection;
+}
+
 static const char *
 v3d_screen_get_name(struct pipe_screen *pscreen)
 {
@@ -708,6 +744,8 @@ v3d_screen_create(int fd, const struct pipe_screen_config *config,
         screen->has_csd = v3d_has_feature(screen, DRM_V3D_PARAM_SUPPORTS_CSD);
         screen->has_cache_flush =
                 v3d_has_feature(screen, DRM_V3D_PARAM_SUPPORTS_CACHE_FLUSH);
+
+        screen->has_x_session = check_x_session();
 
         v3d_fence_init(screen);
 
