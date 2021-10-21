@@ -432,7 +432,7 @@ v3d_resource_get_handle(struct pipe_screen *pscreen,
         case WINSYS_HANDLE_TYPE_SHARED:
                 return v3d_bo_flink(bo, &whandle->handle);
         case WINSYS_HANDLE_TYPE_KMS:
-                if (screen->ro) {
+                if (screen->ro && rsc->scanout) {
                         if (renderonly_get_handle(rsc->scanout, whandle)) {
                                 whandle->stride = rsc->slices[0].stride;
                                 return true;
@@ -722,6 +722,30 @@ v3d_resource_setup(struct pipe_screen *pscreen,
         return rsc;
 }
 
+static bool
+v3d_resource_should_scanout(struct pipe_screen *pscreen,
+                            const struct pipe_resource *tmpl,
+                            const uint64_t *modifiers,
+                            int count)
+{
+        struct v3d_screen *screen = v3d_screen(pscreen);
+
+        if (tmpl->bind & PIPE_BIND_SCANOUT) {
+                if (screen->maintain_ignorable_scanout)
+                        return true;
+                if (screen->has_x_session && screen->ignore_scanout_usages)
+                        return false;
+                return true;
+        }
+
+        if (tmpl->bind & PIPE_BIND_SHARED) {
+                if (screen->ignore_scanout_usages_with_modifiers)
+                        return false;
+                return true;
+        }
+        return false;
+}
+
 static struct pipe_resource *
 v3d_resource_create_with_modifiers(struct pipe_screen *pscreen,
                                    const struct pipe_resource *tmpl,
@@ -735,6 +759,8 @@ v3d_resource_create_with_modifiers(struct pipe_screen *pscreen,
         struct pipe_resource *prsc = &rsc->base;
         /* Use a tiled layout if we can, for better 3D performance. */
         bool should_tile = true;
+        bool should_scanout = v3d_resource_should_scanout(pscreen, tmpl,
+                                                          modifiers, count);
 
         /* VBOs/PBOs are untiled (and 1 height). */
         if (tmpl->target == PIPE_BUFFER)
@@ -760,8 +786,8 @@ v3d_resource_create_with_modifiers(struct pipe_screen *pscreen,
         /* If using the old-school SCANOUT flag, we don't know what the screen
          * might support other than linear. Just force linear.
          */
-        if (tmpl->bind & PIPE_BIND_SCANOUT)
-                should_tile = false;
+        if ((tmpl->bind & PIPE_BIND_SCANOUT) && should_scanout)
+                 should_tile = false;
 
         /* No user-specified modifier; determine our own. */
         if (count == 1 && modifiers[0] == DRM_FORMAT_MOD_INVALID) {
@@ -790,8 +816,8 @@ v3d_resource_create_with_modifiers(struct pipe_screen *pscreen,
          * We always allocate this way for SHARED, because get_handle will
          * need a resource on the display fd.
          */
-        if (screen->ro && (tmpl->bind & (PIPE_BIND_SCANOUT |
-                                         PIPE_BIND_SHARED))) {
+
+        if (screen->ro && should_scanout) {
                 struct winsys_handle handle;
                 struct pipe_resource scanout_tmpl = {
                         .target = prsc->target,
@@ -913,7 +939,7 @@ v3d_resource_from_handle(struct pipe_screen *pscreen,
                  }
         }
 
-        if (screen->ro) {
+        if (screen->ro && !rsc->tiled) {
                 /* Make sure that renderonly has a handle to our buffer in the
                  * display's fd, so that a later renderonly_get_handle()
                  * returns correct handles or GEM names.
