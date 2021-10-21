@@ -427,6 +427,14 @@
    DRI_CONF_OPT_B(v3d_nonmsaa_texture_size_limit, def, \
                   "Report the non-MSAA-only texture size limit")
 
+#define DRI_CONF_V3D_IGNORE_SCANOUT_USAGES_WITH_MODIFIERS(def) \
+   DRI_CONF_OPT_B(v3d_ignore_scanout_usages_with_modifiers, def, \
+                  "Ignore SCANOUT usage on resource allocations with modifiers.")
+
+#define DRI_CONF_V3D_MAINTAIN_IGNORABLE_SCANOUT(def)   \
+   DRI_CONF_OPT_B(v3d_maintain_ignorable_scanout, def, \
+                  "Maintain SCANOUT usage on resource allocations when the environment allows ignoring SCANOUT usage.")
+
 /**
  * \brief virgl specific configuration options
  */

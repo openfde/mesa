@@ -80,6 +80,9 @@ struct v3d_screen {
         bool has_csd;
         bool has_cache_flush;
         bool nonmsaa_texture_size_limit;
+        bool ignore_scanout_usages;
+        bool ignore_scanout_usages_with_modifiers;
+        bool maintain_ignorable_scanout;
 
         /* Are we running in an X session? */
         bool has_x_session;

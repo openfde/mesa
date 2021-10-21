@@ -747,6 +747,26 @@ v3d_screen_create(int fd, const struct pipe_screen_config *config,
 
         screen->has_x_session = check_x_session();
 
+        screen->ignore_scanout_usages = getenv("V3D_IGNORE_SCANOUT_USAGES");
+
+        const char *ignore_scanout_usages_with_modifiers_name =
+                "v3d_ignore_scanout_usages_with_modifiers";
+        screen->ignore_scanout_usages_with_modifiers =
+                driCheckOption(config->options,
+                               ignore_scanout_usages_with_modifiers_name,
+                               DRI_BOOL) &&
+                driQueryOptionb(config->options,
+                                ignore_scanout_usages_with_modifiers_name);
+
+        const char *maintain_ignorable_scanout_name =
+                "v3d_maintain_ignorable_scanout";
+        screen->maintain_ignorable_scanout =
+                driCheckOption(config->options,
+                               maintain_ignorable_scanout_name,
+                               DRI_BOOL) &&
+                driQueryOptionb(config->options,
+                                maintain_ignorable_scanout_name);
+
         v3d_fence_init(screen);
 
         v3d_process_debug_variable();
