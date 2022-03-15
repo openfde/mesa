@@ -39,7 +39,7 @@
 #endif
 
 static inline struct pipe_screen *
-sw_screen_create_named(struct sw_winsys *winsys, const char *driver)
+sw_screen_create_named(struct sw_winsys *winsys, const struct pipe_screen_config *config, const char *driver)
 {
    struct pipe_screen *screen = NULL;
 
@@ -80,7 +80,7 @@ sw_screen_create_named(struct sw_winsys *winsys, const char *driver)
 }
 
 struct pipe_screen *
-sw_screen_create_vk(struct sw_winsys *winsys, bool sw_vk)
+sw_screen_create_vk(struct sw_winsys *winsys, const struct pipe_screen_config *config, bool sw_vk)
 {
    UNUSED bool only_sw = env_var_as_boolean("LIBGL_ALWAYS_SOFTWARE", false);
    const char *drivers[] = {
@@ -90,6 +90,9 @@ sw_screen_create_vk(struct sw_winsys *winsys, bool sw_vk)
 #endif
 #if defined(GALLIUM_ASAHI)
       (sw_vk || only_sw) ? "" : "asahi",
+#endif
+#if defined(GALLIUM_ZINK)
+      (sw_vk || only_sw) ? "" : "zink",
 #endif
 #if defined(GALLIUM_LLVMPIPE)
       "llvmpipe",
@@ -103,7 +106,7 @@ sw_screen_create_vk(struct sw_winsys *winsys, bool sw_vk)
    };
 
    for (unsigned i = 0; i < ARRAY_SIZE(drivers); i++) {
-      struct pipe_screen *screen = sw_screen_create_named(winsys, drivers[i]);
+      struct pipe_screen *screen = sw_screen_create_named(winsys, config, drivers[i]);
       if (screen)
          return screen;
       /* If the env var is set, don't keep trying things */
@@ -114,8 +117,18 @@ sw_screen_create_vk(struct sw_winsys *winsys, bool sw_vk)
 }
 
 struct pipe_screen *
+sw_screen_create_zink(struct sw_winsys *winsys, const struct pipe_screen_config *config, bool whatever)
+{
+#if defined(GALLIUM_ZINK)
+   return zink_create_screen(winsys);
+#else
+   return NULL;
+#endif
+}
+
+struct pipe_screen *
 sw_screen_create(struct sw_winsys *winsys)
 {
-   return sw_screen_create_vk(winsys, false);
+   return sw_screen_create_vk(winsys, NULL, false);
 }
 #endif

@@ -88,6 +88,8 @@ setupLoaderExtensions(__DRIscreen *psp,
            psp->image.loader = (__DRIimageLoaderExtension *) extensions[i];
         if (strcmp(extensions[i]->name, __DRI_MUTABLE_RENDER_BUFFER_LOADER) == 0)
            psp->mutableRenderBuffer.loader = (__DRImutableRenderBufferLoaderExtension *) extensions[i];
+        if (strcmp(extensions[i]->name, __DRI_KOPPER_LOADER) == 0)
+            psp->kopper_loader = (__DRIkopperLoaderExtension *) extensions[i];
     }
 }
 
@@ -113,7 +115,10 @@ driCreateNewScreen2(int scrn, int fd,
 
     setupLoaderExtensions(psp, extensions);
 
-    if (psp->swrast_loader) {
+    const char *env = getenv("MESA_LOADER_DRIVER_OVERRIDE");
+    if (env && !strcmp(env, "zink") /* XXX && psp->kopper_loader ? */) {
+       psp->driver = &galliumvk_driver_api;
+    } else if (psp->swrast_loader) {
        if (fd != -1)
           psp->driver = &dri_kms_driver_api;
        else
