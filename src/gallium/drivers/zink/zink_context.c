@@ -2132,15 +2132,14 @@ prep_fb_attachment(struct zink_context *ctx, struct zink_surface *surf, unsigned
    if (!surf || (i < ctx->fb_state.nr_cbufs && zink_use_dummy_attachments(ctx)))
       return zink_csurface(ctx->dummy_surface[util_logbase2_ceil(ctx->fb_state.samples)])->image_view;
 
-   zink_batch_resource_usage_set(&ctx->batch, zink_resource(surf->base.texture), true);
-   zink_batch_usage_set(&surf->batch_uses, ctx->batch.state);
-
    struct zink_resource *res = zink_resource(surf->base.texture);
    VkAccessFlags access;
    VkPipelineStageFlags pipeline;
    VkImageLayout layout = zink_render_pass_attachment_get_barrier_info(ctx->gfx_pipeline_state.render_pass,
                                                                        i, &pipeline, &access);
    zink_resource_image_barrier(ctx, res, layout, access, pipeline);
+   zink_batch_resource_usage_set(&ctx->batch, res, true);
+   zink_batch_usage_set(&surf->batch_uses, ctx->batch.state);
    return surf->image_view;
 }
 
