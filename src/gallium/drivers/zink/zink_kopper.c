@@ -389,42 +389,48 @@ kopper_acquire(struct zink_screen *screen, struct zink_resource *res, uint64_t t
       return true;
    res->obj->acquire = VK_NULL_HANDLE;
    VkSemaphore acquire = VK_NULL_HANDLE;
-   if (res->obj->new_dt) {
-update_swapchain:
-      VkResult error = update_swapchain(screen, cdt, res->base.b.width0, res->base.b.height0);
-      zink_screen_handle_vkresult(screen, error);
-      if (error != VK_SUCCESS)
-         return error;
-      res->obj->new_dt = false;
-      res->layout = VK_IMAGE_LAYOUT_UNDEFINED;
-      res->obj->access = 0;
-      res->obj->access_stage = 0;
-   }
-   if (timeout == UINT64_MAX && util_queue_is_initialized(&screen->flush_queue) &&
-       p_atomic_read_relaxed(&cdt->swapchain->num_acquires) > cdt->swapchain->max_acquires) {
-      util_queue_fence_wait(&res->obj->present_fence);
-   }
-   VkSemaphoreCreateInfo sci = {
-      VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-      NULL,
-      0
-   };
-   VkResult ret;
-   if (!acquire) {
-      ret = VKSCR(CreateSemaphore)(screen->dev, &sci, NULL, &acquire);
-      assert(acquire);
-      if (ret != VK_SUCCESS)
+
+   while (true) {
+      if (res->obj->new_dt) {
+         VkResult error = update_swapchain(screen, cdt, res->base.b.width0, res->base.b.height0);
+         zink_screen_handle_vkresult(screen, error);
+         if (error != VK_SUCCESS)
+            return error;
+         res->obj->new_dt = false;
+         res->layout = VK_IMAGE_LAYOUT_UNDEFINED;
+         res->obj->access = 0;
+         res->obj->access_stage = 0;
+      }
+      if (timeout == UINT64_MAX && util_queue_is_initialized(&screen->flush_queue) &&
+          p_atomic_read_relaxed(&cdt->swapchain->num_acquires) > cdt->swapchain->max_acquires) {
+         util_queue_fence_wait(&res->obj->present_fence);
+      }
+      VkSemaphoreCreateInfo sci = {
+         VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+         NULL,
+         0
+      };
+      VkResult ret;
+      if (!acquire) {
+         ret = VKSCR(CreateSemaphore)(screen->dev, &sci, NULL, &acquire);
+         assert(acquire);
+         if (ret != VK_SUCCESS)
+            return ret;
+      }
+      ASSERTED unsigned prev = res->obj->dt_idx;
+      ret = VKSCR(AcquireNextImageKHR)(screen->dev, cdt->swapchain->swapchain, timeout, acquire, VK_NULL_HANDLE, &res->obj->dt_idx);
+      if (ret != VK_SUCCESS && ret != VK_SUBOPTIMAL_KHR) {
+         if (ret == VK_ERROR_OUT_OF_DATE_KHR) {
+            res->obj->new_dt = true;
+            continue;
+         }
+         VKSCR(DestroySemaphore)(screen->dev, acquire, NULL);
          return ret;
+      }
+      assert(prev != res->obj->dt_idx);
+      break;
    }
-   ASSERTED unsigned prev = res->obj->dt_idx;
-   ret = VKSCR(AcquireNextImageKHR)(screen->dev, cdt->swapchain->swapchain, timeout, acquire, VK_NULL_HANDLE, &res->obj->dt_idx);
-   if (ret != VK_SUCCESS && ret != VK_SUBOPTIMAL_KHR) {
-      if (ret == VK_ERROR_OUT_OF_DATE_KHR)
-         goto update_swapchain;
-      VKSCR(DestroySemaphore)(screen->dev, acquire, NULL);
-      return ret;
-   }
-   assert(prev != res->obj->dt_idx);
+
    cdt->swapchain->acquires[res->obj->dt_idx] = res->obj->acquire = acquire;
    res->obj->image = cdt->swapchain->images[res->obj->dt_idx];
    res->obj->acquired = false;
