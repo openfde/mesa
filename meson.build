@@ -122,14 +122,6 @@ elif with_gles2 == 'false'
   with_gles2 = 'disabled'
   warning('gles2 option "false" deprecated, please use "disabled" instead.')
 endif
-if host_machine.system() == 'windows'
-  if with_gles1 == 'auto'
-    with_gles1 = 'disabled'
-  endif
-  if with_gles2 == 'auto'
-    with_gles2 = 'disabled'
-  endif
-endif
 with_opengl = get_option('opengl')
 
 # Default shared glapi off for windows, on elsewhere.
@@ -204,7 +196,9 @@ if gallium_drivers.contains('auto')
       error('Unknown architecture @0@. Please pass -Dgallium-drivers to set driver options. Patches gladly accepted to fix this.'.format(
             host_machine.cpu_family()))
     endif
-  elif ['darwin', 'windows', 'cygwin', 'haiku'].contains(host_machine.system())
+  elif host_machine.system() == 'windows'
+    gallium_drivers = ['swrast', 'd3d12', 'zink']
+  elif ['darwin', 'cygwin', 'haiku'].contains(host_machine.system())
     gallium_drivers = ['swrast']
   else
     error('Unknown OS @0@. Please pass -Dgallium-drivers to set driver options. Patches gladly accepted to fix this.'.format(
@@ -259,7 +253,9 @@ if _vulkan_drivers.contains('auto')
       error('Unknown architecture @0@. Please pass -Dvulkan-drivers to set driver options. Patches gladly accepted to fix this.'.format(
             host_machine.cpu_family()))
     endif
-  elif ['darwin', 'windows', 'cygwin', 'haiku'].contains(host_machine.system())
+  elif host_machine.system() == 'windows'
+      _vulkan_drivers = ['swrast', 'amd', 'microsoft-experimental']
+  elif ['darwin', 'cygwin', 'haiku'].contains(host_machine.system())
     # No vulkan driver supports windows or macOS currently
     _vulkan_drivers = []
   else
