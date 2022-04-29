@@ -676,7 +676,7 @@ if with_gallium_zink
 endif
 
 dep_dxheaders = null_dep
-if with_gallium_d3d12 or with_microsoft_clc or with_microsoft_vk
+if with_microsoft_clc or with_gallium_d3d12 or with_spirv_to_dxil or with_microsoft_vk
   dep_dxheaders_prj = subproject('DirectX-Headers')
   dep_dxheaders = dep_dxheaders_prj.get_variable('dep_dxheaders')
 endif
