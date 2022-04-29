@@ -54,6 +54,7 @@
 
 #define D3D12_IGNORE_SDK_LAYERS
 #define COBJMACROS
+#include <unknwn.h>
 #include <dxgi1_4.h>
 #include <directx/d3d12.h>
 
