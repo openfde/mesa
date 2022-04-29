@@ -64,6 +64,7 @@ if with_tests
   test_wgl = executable(
     'test_wgl',
     files('tests/wgl_tests.cpp'),
+    override_options : dep_dxheaders_override_options,
     cpp_args : [cpp_msvc_compat_args, extra_test_defs],
     dependencies : [idep_gtest, dep_dxheaders, extra_test_deps],
   )
