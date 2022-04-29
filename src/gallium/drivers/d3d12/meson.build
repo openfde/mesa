@@ -56,6 +56,7 @@ endif
 libd3d12 = static_library(
   'd3d12',
   files_libd3d12,
+  override_options : dep_dxheaders_override_options,
   gnu_symbol_visibility : 'hidden',
   include_directories : [inc_include, inc_src, inc_mesa, inc_gallium, inc_gallium_aux],
   dependencies: [idep_nir_headers, idep_libdxil_compiler, dep_dxheaders],
