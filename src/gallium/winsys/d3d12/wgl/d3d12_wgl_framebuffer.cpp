@@ -55,7 +55,7 @@ struct d3d12_wgl_framebuffer {
 };
 
 static struct d3d12_wgl_framebuffer *
-d3d12_wgl_framebuffer(struct stw_winsys_framebuffer *fb)
+d3d12_wgl_framebuffer_cast(struct stw_winsys_framebuffer *fb)
 {
    return (struct d3d12_wgl_framebuffer *)fb;
 }
@@ -64,7 +64,7 @@ static void
 d3d12_wgl_framebuffer_destroy(struct stw_winsys_framebuffer *fb,
                               pipe_context *ctx)
 {
-   struct d3d12_wgl_framebuffer *framebuffer = d3d12_wgl_framebuffer(fb);
+   struct d3d12_wgl_framebuffer *framebuffer = d3d12_wgl_framebuffer_cast(fb);
    struct pipe_fence_handle *fence = NULL;
 
    if (ctx) {
@@ -76,7 +76,7 @@ d3d12_wgl_framebuffer_destroy(struct stw_winsys_framebuffer *fb,
       }
    }
 
-   for (int i = 0; i < num_buffers; ++i) {
+   for (uint32_t i = 0; i < num_buffers; ++i) {
       if (framebuffer->buffers[i]) {
          d3d12_resource_release(d3d12_resource(framebuffer->buffers[i]));
          pipe_resource_reference(&framebuffer->buffers[i], NULL);
@@ -91,7 +91,7 @@ d3d12_wgl_framebuffer_resize(stw_winsys_framebuffer *fb,
                              pipe_context *ctx,
                              pipe_resource *templ)
 {
-   struct d3d12_wgl_framebuffer *framebuffer = d3d12_wgl_framebuffer(fb);
+   struct d3d12_wgl_framebuffer *framebuffer = d3d12_wgl_framebuffer_cast(fb);
    struct d3d12_dxgi_screen *screen = d3d12_dxgi_screen(framebuffer->screen);
 
    DXGI_SWAP_CHAIN_DESC1 desc = {};
@@ -134,7 +134,7 @@ d3d12_wgl_framebuffer_resize(stw_winsys_framebuffer *fb,
          ctx->screen->fence_reference(ctx->screen, &fence, NULL);
       }
 
-      for (int i = 0; i < num_buffers; ++i) {
+      for (uint32_t i = 0; i < num_buffers; ++i) {
          if (framebuffer->buffers[i]) {
             d3d12_resource_release(d3d12_resource(framebuffer->buffers[i]));
             pipe_resource_reference(&framebuffer->buffers[i], NULL);
@@ -149,7 +149,7 @@ d3d12_wgl_framebuffer_resize(stw_winsys_framebuffer *fb,
 static boolean
 d3d12_wgl_framebuffer_present(stw_winsys_framebuffer *fb)
 {
-   auto framebuffer = d3d12_wgl_framebuffer(fb);
+   auto framebuffer = d3d12_wgl_framebuffer_cast(fb);
    if (!framebuffer->swapchain) {
       debug_printf("D3D12: Cannot present; no swapchain");
       return false;
@@ -165,7 +165,7 @@ static struct pipe_resource *
 d3d12_wgl_framebuffer_get_resource(struct stw_winsys_framebuffer *pframebuffer,
                                    st_attachment_type statt)
 {
-   auto framebuffer = d3d12_wgl_framebuffer(pframebuffer);
+   auto framebuffer = d3d12_wgl_framebuffer_cast(pframebuffer);
    auto pscreen = &framebuffer->screen->base;
 
    if (!framebuffer->swapchain)
@@ -227,8 +227,6 @@ d3d12_wgl_create_framebuffer(struct pipe_screen *screen,
    struct d3d12_wgl_framebuffer *fb = CALLOC_STRUCT(d3d12_wgl_framebuffer);
    if (!fb)
       return NULL;
-
-   new (fb) struct d3d12_wgl_framebuffer();
 
    fb->window = hWnd;
    fb->screen = d3d12_screen(screen);
