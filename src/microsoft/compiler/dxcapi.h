@@ -274,7 +274,7 @@ typedef struct DxcBuffer {
 
 struct DxcDefine {
   LPCWSTR Name;
-  _Maybenull_ LPCWSTR Value;
+  LPCWSTR Value;
 };
 
 CROSS_PLATFORM_UUIDOF(IDxcCompilerArgs, "73EFFE2A-70DC-45F8-9690-EFF64C02429D")
