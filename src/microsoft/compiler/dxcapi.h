@@ -23,15 +23,7 @@
 #endif
 #endif
 
-#ifdef _WIN32
-
-#ifndef CROSS_PLATFORM_UUIDOF
-// Warning: This macro exists in WinAdapter.h as well
-#define CROSS_PLATFORM_UUIDOF(interface, spec)                                 \
-  struct __declspec(uuid(spec)) interface;
-#endif
-
-#else
+#include <dxguids/dxguids.h>
 
 constexpr uint8_t nybble_from_hex(char c) {
    return ((c >= '0' && c <= '9')
@@ -50,30 +42,47 @@ constexpr uint8_t byte_from_hexstr(const char str[2]) {
    return nybble_from_hex(str[0]) << 4 | nybble_from_hex(str[1]);
 }
 
-constexpr GUID guid_from_string(const char str[37]) {
-   return GUID{ static_cast<uint32_t>(byte_from_hexstr(str)) << 24 |
-                   static_cast<uint32_t>(byte_from_hexstr(str + 2)) << 16 |
-                   static_cast<uint32_t>(byte_from_hexstr(str + 4)) << 8 |
-                   byte_from_hexstr(str + 6),
-               static_cast<uint16_t>(
-                   static_cast<uint16_t>(byte_from_hexstr(str + 9)) << 8 |
-                   byte_from_hexstr(str + 11)),
-               static_cast<uint16_t>(
-                   static_cast<uint16_t>(byte_from_hexstr(str + 14)) << 8 |
-                   byte_from_hexstr(str + 16)),
-               {byte_from_hexstr(str + 19), byte_from_hexstr(str + 21),
-                byte_from_hexstr(str + 24), byte_from_hexstr(str + 26),
-                byte_from_hexstr(str + 28), byte_from_hexstr(str + 30),
-                byte_from_hexstr(str + 32), byte_from_hexstr(str + 34)} };
+constexpr unsigned short short_from_hexstr(const char str[2], unsigned shift)
+{
+   return ((unsigned short)(nybble_from_hex(str[0]) << 4 |
+                            nybble_from_hex(str[1])))
+          << shift;
 }
 
-#define CROSS_PLATFORM_UUIDOF(interface, spec)                                 \
-  struct interface;                                                            \
-  template <> constexpr GUID uuidof<interface>() {                             \
-    constexpr IID _IID = guid_from_string(spec);                            \
-    return _IID;                                                               \
-  }
+constexpr unsigned long word_from_hexstr(const char str[2], unsigned shift)
+{
+   return ((unsigned long)(nybble_from_hex(str[0]) << 4 |
+                           nybble_from_hex(str[1])))
+          << shift;
+}
 
+#define WINADAPTER_IID_FROM_STR(interface, spec)                               \
+   WINADAPTER_IID(                                                             \
+       interface,                                                              \
+       word_from_hexstr(spec, 24) | word_from_hexstr(spec + 2, 16) |           \
+           word_from_hexstr(spec + 4, 8) | word_from_hexstr(spec + 6, 0),      \
+       short_from_hexstr(spec + 9, 8) | short_from_hexstr(spec + 11, 0),       \
+       short_from_hexstr(spec + 14, 8) | short_from_hexstr(spec + 16, 0),      \
+       byte_from_hexstr(spec + 19), byte_from_hexstr(spec + 21),               \
+       byte_from_hexstr(spec + 24), byte_from_hexstr(spec + 26),               \
+       byte_from_hexstr(spec + 28), byte_from_hexstr(spec + 30),               \
+       byte_from_hexstr(spec + 32), byte_from_hexstr(spec + 34))
+
+#ifndef CROSS_PLATFORM_UUIDOF
+#if defined(__MINGW32__)
+// Warning: This macro exists in WinAdapter.h as well
+#define CROSS_PLATFORM_UUIDOF(interface, spec)                                 \
+   struct interface;                                                           \
+   WINADAPTER_IID_FROM_STR(interface, spec)
+#else
+// Warning: This macro exists in WinAdapter.h as well
+#define CROSS_PLATFORM_UUIDOF(interface, spec)                                 \
+   struct __declspec(uuid(spec)) interface;                                    \
+   WINADAPTER_IID_FROM_STR(interface, spec)
+#endif
+#endif
+
+#if !defined(_WIN32)
 
 CROSS_PLATFORM_UUIDOF(INoMarshal, "ECC8691B-C1DB-4DC0-855E-65F6C551AF49")
 struct INoMarshal : public IUnknown {};

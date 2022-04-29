@@ -52,8 +52,9 @@ dxil_nir_algebraic_c = custom_target(
 libdxil_compiler = static_library(
   'dxil_compiler',
   [files_libdxil_compiler, dxil_nir_algebraic_c, sha1_h],
+  override_options : dep_dxheaders_override_options,
   include_directories : [inc_include, inc_src, inc_mapi, inc_mesa, inc_compiler, inc_gallium],
-  dependencies: [idep_nir_headers],
+  dependencies: [idep_nir_headers, dep_dxheaders],
   gnu_symbol_visibility : 'hidden',
 )
 
