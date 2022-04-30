@@ -482,9 +482,6 @@ static bool
 fix_sample_mask_type(struct nir_builder *builder, nir_instr *instr,
                      void *cb_data)
 {
-   struct dxil_spirv_runtime_conf *conf =
-      (struct dxil_spirv_runtime_conf *)cb_data;
-
    if (instr->type != nir_instr_type_deref)
       return false;
 
@@ -520,7 +517,7 @@ dxil_spirv_nir_fix_sample_mask_type(nir_shader *shader)
 bool
 spirv_to_dxil(const uint32_t *words, size_t word_count,
               struct dxil_spirv_specialization *specializations,
-              unsigned int num_specializations, dxil_spirv_shader_stage stage,
+              unsigned int num_specializations, gl_shader_stage stage,
               const char *entry_point_name,
               const struct dxil_spirv_debug_options *dgb_opts,
               const struct dxil_spirv_runtime_conf *conf,

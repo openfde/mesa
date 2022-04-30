@@ -28,24 +28,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "shader_enums.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// NB: I've copy and pasted some types into this header so we don't have to
-// include other headers. This will surely break if any of these types change.
-
-// Copy of gl_shader_stage
-typedef enum {
-   DXIL_SPIRV_SHADER_NONE = -1,
-   DXIL_SPIRV_SHADER_VERTEX = 0,
-   DXIL_SPIRV_SHADER_TESS_CTRL = 1,
-   DXIL_SPIRV_SHADER_TESS_EVAL = 2,
-   DXIL_SPIRV_SHADER_GEOMETRY = 3,
-   DXIL_SPIRV_SHADER_FRAGMENT = 4,
-   DXIL_SPIRV_SHADER_COMPUTE = 5,
-   DXIL_SPIRV_SHADER_KERNEL = 6,
-} dxil_spirv_shader_stage;
 
 // Copy of nir_spirv_const_value
 typedef union {
@@ -190,7 +177,7 @@ struct dxil_spirv_debug_options {
 bool
 spirv_to_dxil(const uint32_t *words, size_t word_count,
               struct dxil_spirv_specialization *specializations,
-              unsigned int num_specializations, dxil_spirv_shader_stage stage,
+              unsigned int num_specializations, gl_shader_stage stage,
               const char *entry_point_name,
               const struct dxil_spirv_debug_options *debug_options,
               const struct dxil_spirv_runtime_conf *conf,

@@ -142,7 +142,7 @@ main(int argc, char **argv)
    struct dxil_spirv_object obj;
    memset(&obj, 0, sizeof(obj));
    if (spirv_to_dxil((uint32_t *)file_contents, word_count, NULL, 0,
-                     (dxil_spirv_shader_stage)shader_stage, entry_point,
+                     shader_stage, entry_point,
                      &dbg_opts, &conf, &obj)) {
 
       if (validate && !validate_dxil(&obj)) {
