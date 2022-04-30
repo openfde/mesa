@@ -1,5 +1,5 @@
 [wrap-git]
 directory = DirectX-Headers-1.0
 
-url = https://github.com/microsoft/DirectX-Headers.git
+url = https://github.com/lygstate/DirectX-Headers.git
 revision = head
