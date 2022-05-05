@@ -54,6 +54,15 @@
   script:
     - .gitlab-ci/meson/build.sh
 
+.meson-build_mingw:
+  extends:
+    - .build-linux
+    - .use-debian/x86_build_mingw
+    - .use-wine
+  stage: build-x86_64
+  script:
+    - .gitlab-ci/meson/build.sh
+
 debian-testing:
   extends:
     - .meson-build
@@ -510,18 +519,37 @@ debian-ppc64el:
     VULKAN_DRIVERS: "amd,swrast"
 
 debian-mingw32-x86_64:
-  extends: .meson-build
+  extends: .meson-build_mingw
   stage: build-misc
   variables:
     UNWIND: "disabled"
     C_ARGS: >
       -Wno-error=format
       -Wno-error=format-extra-args
+      -Wno-error=deprecated-declarations
+      -Wno-error=unused-function
+      -Wno-error=unused-variable
+      -Wno-error=unused-but-set-variable
+      -Wno-error=unused-value
+      -Wno-error=switch
+      -Wno-error=parentheses
+      -Wno-error=missing-prototypes
+      -Wno-error=sign-compare
+      -Wno-error=narrowing
+      -Wno-error=overflow
     CPP_ARGS: $C_ARGS
-    GALLIUM_DRIVERS: "swrast"
+    GALLIUM_DRIVERS: "swrast,d3d12,zink"
+    VULKAN_DRIVERS: "swrast,amd,microsoft-experimental"
+    GALLIUM_ST: >
+      -D gallium-opencl=icd
+      -D opencl-spirv=true
+      -D microsoft-clc=enabled
+      -D static-libclc=all
+      -D llvm=enabled
     EXTRA_OPTION: >
-      -Dllvm=disabled
-      -Dzlib=disabled
+      -Dcpp_rtti=true
+      -Dshared-glapi=enabled
+      -Dzlib=enabled
       -Dosmesa=true
       -Dspirv-to-dxil=true
       --cross-file=.gitlab-ci/x86_64-w64-mingw32
