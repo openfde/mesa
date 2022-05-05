@@ -39,6 +39,7 @@ if dep_dxheaders.found()
     link_with : [libclc_compiler],
     dependencies : [idep_gtest, idep_mesautil, idep_libdxil_compiler, dep_dxheaders,
                     dep_spirv_tools],
+    override_options : dep_dxheaders_override_options,
     include_directories : [inc_include, inc_src, inc_compiler, inc_spirv],
   )
 
