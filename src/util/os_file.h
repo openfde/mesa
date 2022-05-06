@@ -11,6 +11,14 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#  include <io.h> /* close */
+#elif defined(HAVE_PTHREAD)
+#  include <unistd.h> /* close */
+#else
+#  error Not supported on this platform.
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
