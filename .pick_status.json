@@ -1,5 +1,491 @@
 [
     {
+        "sha": "b75b9d6324e0f3a31e72bd501034cf9c2a6c43af",
+        "description": "ac/llvm: set invariant.load on image loads with ACCESS_CAN_REORDER",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "de3fcc77c78b5879e3d4fb66ec2bf1edcd135223",
+        "description": "ac/llvm: inline ac_get_load_intr_attribs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ce860953a625f718bfe298fd9ca89d99a95fa7f4",
+        "description": "ac/llvm: rename attribute enums",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ce0a83efb86d693e361587c60d4332f78d682b7d",
+        "description": "ac/llvm: use invariant.load metadata on load intrinsics instead of readnone",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d3a03d24fce06d99e8e0b6c379fe904a8b0febca",
+        "description": "ac/llvm: don't set \"readnone\" on non-memory intrinsics",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "50bece9322c6d89a49456b31a132f5058f9b5981",
+        "description": "ac/llvm: don't set \"convergent\" on intrinsics where it's automatic",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2b5edf96ff3c129f27ecb276593693085bc1cd9a",
+        "description": "ac/llvm: simplify how function attributes are set",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9b4142ae9f29e304f1fd2214ecf1a795b1473d6e",
+        "description": "ac/llvm: simplify how call attributes are set",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e94b040add069900bd2aac18e05b219d1be156b5",
+        "description": "ac/llvm: remove illegal function attributes READONLY and WRITEONLY",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "89cd402c9b77231596b79030dd671f880735908b",
+        "description": "gallivm: remove illegal and unused function attributes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6ab5f5703940c71a6cd7cbe57dbbcd4359033485",
+        "description": "gallivm: remove unused LP_FUNC_ATTR_LEGACY",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e54f2286bea66186001ad42ee5019657f0e98041",
+        "description": "gallivm: remove unused LP_FUNC_ATTR_INACCESSIBLE_MEM_ONLY",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5104f4d496d1dd05fd6f526fc4c29e198a46db4c",
+        "description": "ac/llvm: remove unused AC_FUNC_ATTR_LEGACY",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "834d59a83e64ef367ae5af174d8a968e7840f5c4",
+        "description": "ac/llvm: remove AC_FUNC_ATTR_INACCESSIBLE_MEM_ONLY because LLVM 16 removed it",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "16971cd667bb0e1e664b796d038754de87c3b737",
+        "description": "zink: add driver-workaround for missing gl_point_size",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3193eebb45b44a0a14989f62b35d80b94dbdf387",
+        "description": "zink: rename `zink_set_line_stipple_keys`",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ea5b2b9c4c05af6751616ecd19492e573884fde1",
+        "description": "zink: add gl_point lowering pass",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "da5840f3857664848b58e193c5ba56dac355860c",
+        "description": "llvmpipe: Faithfully honour pipe_rasterizer_state::rasterizer_discard flag.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "36a7d6788c92f69e7463fb7e3cd4f1154dea767d",
+        "description": "nir: Recognize empty shaders in nir_tgsi_scan_shader().",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dcf3ae72abf78e8959c5b5a94ef332c0b7396ab2",
+        "description": "zink: do not lower gs-intrinscs, take two",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "ad26d29adcc3ed0ff9fef49a1f4360b08e4be61b"
+    },
+    {
+        "sha": "a42f8d49c39eb59a520fde05fdcab0ffab3a16c6",
+        "description": "radv: use LATE_Z for depth/stencil attachments used in feedback loops",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "86c3b9df12a486fc9910c9718e824ccc9fadb6b9",
+        "description": "radv: apply register changes for SQTT on GFX11",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ad26d29adcc3ed0ff9fef49a1f4360b08e4be61b",
+        "description": "zink: do not lower gs-intrinsics",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7244d885164aa59ca136358d256a0078b24a455d",
+        "description": "nir: fix nir_link_varying_precision",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4663d6fc9c1291dee014057d25245b62a1ec6738",
+        "description": "turnip: fix dynamic logicop state",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "c8c7154c2ecb6d8439cc941985bded3759b8334b"
+    },
+    {
+        "sha": "ea4de4ad3d13af714db4f7956ed4262eafd6460b",
+        "description": "anv: Don't ambiguate for undefined layouts on TGL+",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5c84b318916c114712b28b6211e4de712ef51ca7",
+        "description": "anv: Move aux vars up in transition_color_buffer",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "822687f4c06fd178a64295d45780bdc962b2939c",
+        "description": "intel/dev: Add a has_illegal_ccs_values flag",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d307655e528389d0918546b452c2961a85a9d9ad",
+        "description": "anv: Use specific flush reasons for CCS operations",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d4cd33630a9b90b95390f10d3aaa52f6f5e20245",
+        "description": "intel: add missing restriction on fragment simd dispatch",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b9403b1c477e7af04114ae6a4e16ca370e22253c",
+        "description": "intel: factor out dispatch PS enabling logic",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "71180004e0e9534f3d157e40c639ca9e2d6e9d96",
+        "description": "ci/i915: Update xfails.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f902203daa984c820f100847dd3dce161b13d4a7",
+        "description": "i915: Fix probing regression.",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "dfd20f002f388be3f168938bc1f25e91bb08bf98"
+    },
+    {
+        "sha": "a42feab5ae8e16fdf0d9c1d33247c6c372e3646f",
+        "description": "egl+glx: Always support no_error contexts.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "895ec843d33e48e148cdc978f08dc42a55b08426",
+        "description": "egl: Collapse a bunch of renderer queries into pipe cap queries.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7ab8dd13b9eaa1d5620cc8432bd0efc70862f88f",
+        "description": "egl: Pull the API mask directly out of the dri_screen.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "133e2f8ac395fff20efa9fb12021003e1af995db",
+        "description": "dri: Add createContext hook to __DRI_MESA.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cdc7475f72a329860a80a22faf5c71b805eb00ba",
+        "description": "gallium/dri: Move the backendVtable InitScreen func into __DRI_MESA.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4dd656e19a7cfcc4023538bc863583ed8b47352b",
+        "description": "dri: Add createNewScreen into the __DRI_MESA extension.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fbf9f671e4e451ca118d99dfe69d6d2233296ff0",
+        "description": "gallium/dri: Clarify some \"extensions\" lists in driCreateNewScreen2.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1026d29344192755dd340d6ac13a9674189d2d61",
+        "description": "dri: Introduce internal Mesa DRI driver loader extension.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2db044d7e53d960c2d7286d0b8899ba455254475",
+        "description": "gbm: Refactor screen creation a bit.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3ad1ef82dd9277a7bf9cb04f8a0ea803825e6976",
+        "description": "gbm: Drop redundant extension error checks.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "690ea44cf1803cf1fc4b8aadba5fe1c4c6785261",
+        "description": "gallium/dri: Use loader_bind_extensions().",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ca7a74199fc9ef5abda5c1f4c9bf719c183ba7a1",
+        "description": "egl: Switch to using loader_bind_extensions().",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3ae6ec9f60651dd5b57c05c8e35b83dbdde66eec",
+        "description": "glx: Use loader_bind_extensions().",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e864047f971d17aa11db406083dbc9eaf2cc5956",
+        "description": "loader: Simplify the extension matching logic.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6229b48aaa8c783fd0d4a22d326913e7858c44ca",
+        "description": "gbm: Promote dri_bind_extensions() to the loader util library.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b49e7cb3f4e41c7b6f8d9d0a0a2eb33e947f7238",
+        "description": "radv: Add missing radeon_check_space() in radv_cmd_buffer_after_draw()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d86f60d21e31718120b633745e53768a537ef4a3",
+        "description": "radv: Use wave32 for ray queries inside compute shaders",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "712fcaba1f46efb9f9dc22903bd9c8c48032fbe3",
+        "description": "frontends/va: return proper error for unsupported profile",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "da32cbb5c6951ddddbf8b146c4526bcd9411fdcb",
+        "description": "aco: fix missing uses of MRT output flags",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "a297ac10a4e798ec1595fab532d10b9383657c13"
+    },
+    {
+        "sha": "40f09f4e1c3742851b5513b1f88012dda0661228",
+        "description": "pvr: Add empty PDS program",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "46c2492a5d1f78957c1c2166843af8f12aa74b09",
+        "description": "pvr: Add pvr_pds_compute_shader_program_init()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "8c506c4b03aa17ba1c71ed4ce80464d489c29de7",
         "description": "pvr: Use util_dynarray_append_dynarray()",
         "nominated": false,
