@@ -1,5 +1,563 @@
 [
     {
+        "sha": "b6616b036f7e8d88be50d46448890b1dee057cbb",
+        "description": "virgl: lower FMA and MULADD",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8d10a6835f32ec677759f9d37e08dcc95aaab17a",
+        "description": "glsl: dont create temps for builtin function inputs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7b9ec592aa3cc84b8a26822edcc2c8ef4efe7220",
+        "description": "glsl: use ir_rvalue_visitor for function inlining",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "34b28cfb7d9d7475f093bfdc8aca31d4c1c71dd5",
+        "description": "venus: scrub ignored fields for descriptor writes for push descriptor",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "933ca11f1a48b19fea088edfcf5177779083d7b5"
+    },
+    {
+        "sha": "e1ab7629f8a459df87009c7cb28b41acfb17e45c",
+        "description": "vulkan: VkPolygonMode has a bit more than two values",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9d0ed9cbcc01b31a71037fcb35742fc8b77f09fe"
+    },
+    {
+        "sha": "403585352314ba9ef5205b71b0d35c190a61c6bb",
+        "description": "hasvk: Report correct multisampling limits on gfx7",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "513442dc32f809bb52f843215f7355e2d386dd67",
+        "description": "aco: Add s_delay_alu support for GFX11+",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cd3bf56acea12e25281717d6752b899473e54d27",
+        "description": "aco: Add helper to get cycle info for an instruction.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "352e492c7b1bed91569774c9c2b44c0b24984840",
+        "description": "aco: Add isTrans helper.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bdb7fd69d659dee5c8bf0a05eef9fc3f330704c0",
+        "description": "radv: mark extendedDynamicState3SampleLocationsEnable as not required by Zink",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "06a65be3d44a6ec710a5bb63bc738070e9280765",
+        "description": "radv: advertise extendedDynamicState3LineRasterizationMode",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "10092763123e21e2e973b39aa34bb0be232489dd",
+        "description": "radv: add support for dynamic line rasterization mode",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f992e663c77651d1d845d869fca3feea5d09f1ed",
+        "description": "radv: advertise extendedDynamicState3RasterizationSamples",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a2fe4e9b048d265e427057357610bcd1a931ba06",
+        "description": "radv: add support for dynamic rasterization samples",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c88d4037aac30fe3f2555beee4b034219a4161aa",
+        "description": "radv: store the number of color/ds samples to the rendering state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "613e9b8e7a8891ebbf80200a54784d26386ed843",
+        "description": "nir: fix digit order in print_bitset()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0320dbaff55870df5eb14c207083f1cd0d1ec1ee",
+        "description": "nir: print shader_info bools with the value",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "da2d36a9d594f4f22f33bfdeecd755d6b3b8f2b8",
+        "description": "nir: print shader_info inputs/outputs as bit ranges",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "89eca6a2fa92a39dbbd583a5232e3d9e7141b9a4",
+        "description": "radeonsi: add AMD_DEBUG=elements for printing vertex elements",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6dd170e5a42704b383839d744b49531ac1a768ff",
+        "description": "util: minor refactor _mesa_sha1_print()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e9f3f80b1d5eec3651800be8f6eb879a4e0ab745",
+        "description": "nir: print_shader_info(): brief output",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "814ba7d13d6d65a2c5d9b18db7d07f25f40dafef",
+        "description": "nir: print_shader_info: print stage-specific shader info",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "37b7233c15e080f29527535a09a24a563d2e84ec",
+        "description": "nir: print_shader_info() print bitsets",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4ed85c16f902ab3094df57963c4550098d52c0e7",
+        "description": "nir: print more in print_shader_info()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "185e65f0f5d915e26cb7fe9d57938794addb7f11",
+        "description": "nir: extract print_shader_info() from nir_print_shader_annotated()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2e775b8bdbc5cd0d120b5c757188f6e85bf0d59d",
+        "description": "anv/hasvk: Clamping Scissor Rect values in a valid range",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "029919f3c83f379065515708188d5c439c3fa6bc",
+        "description": "tu: allow using resolve engine for SRGB MSAA resolves",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1cfc413c9a4cdd26222197ab0a518c2b603d82b1",
+        "description": "meson: Do not enable drm for KGSL Turnip build",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "09ac29cca9bf7978911f81bcfce12ce71c260a97"
+    },
+    {
+        "sha": "3c3e5cc40d1144b2a70d3f62798f27b02c6ba6ea",
+        "description": "st/mesa: stop using redundant st_context::vp,tcp,tep,gp,fp,cp",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "33ca53ac79ad954b72afeb14142d179c313fe4e3",
+        "description": "st/mesa: fix the glBitmap cache wrt FS, scissor, and clamp color changes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "525c70c61aac18c87ba64ec531e9e3c2075091a0",
+        "description": "st/mesa: don't flag ST_NEW_RASTERIZER for _NEW_PROGRAM",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2a25b47c87e7d1e9cb9c8ea88f25ec2b93becc7f",
+        "description": "mesa: flag ST_NEW_RASTERIZER for !needs_texcoord_semantic if changing FS",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7950661aa0195b6a156bf64ec46a032a5c8d607f",
+        "description": "mesa: remove unused composite _NEW_* flags",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0a8d741b6d9bbca485a8e8191564763762977cc3",
+        "description": "mesa: don't flag _NEW_PROGRAM for \"texture_unit -> sampler\" mapping changes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dbc9cb699549359577364f872aabd41f89539f9a",
+        "description": "mesa: set fewer flags for VertexProgram.TwoSideEnabled changes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5acc0fa1d2250f4c955f0c24898b36b15773c2b3",
+        "description": "mesa: set fewer dirty flags for PointSizeEnabled state changes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5b97b452afdfbc02159e57d2a08d3a1836c3d677",
+        "description": "mesa: flag ST_NEW_FS_CONSTANTS instead of _NEW_PROGRAM for ATI_fs constants",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4bc0edd1cf9207ce3023cd45ba20bc1efb730da3",
+        "description": "st/mesa: update st_context::active_states in _mesa_update_state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "aaa4b0e6186842e40a858e82f31d146a712ab082",
+        "description": "st/mesa: move check_program_state code into _mesa_update_state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "03118273376813702f8752f41aabb9a010893955",
+        "description": "st/mesa: always unbind constant buffer 0 when unbinding a shader",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a77c687cfb02225b224bec73694b27d47ea03897",
+        "description": "mesa: clean up hairy code in state.c: update_program",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "65406bfde1f406c798d00d7c0b1a493f31c2f9a1",
+        "description": "zink: fix rebase-mistake",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "16971cd667bb0e1e664b796d038754de87c3b737"
+    },
+    {
+        "sha": "e25e17dd0c39675acd48fd4a6982fcd77530ef2c",
+        "description": "intel/fs: clamp per vertex input accesses to patchControlPoints",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9d43aebcaddfc081158db8313209a9b12afb864d",
+        "description": "nir: Use nir_component_mask_t for nir_alu_dst::write_mask",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "57b7102ef96a282128ead4e7a8c03c7fdb53e71a",
+        "description": "glx: fix xshm check to init xshm_opcode.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "68e89401140d1b3a17052899c54577de3f008b67"
+    },
+    {
+        "sha": "2ccf481c17ccded161b9eecb63a257d81056e3ec",
+        "description": "zink: don't use defunct custom-flag",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "00dc0036bb6d0c6de1ec3dc395e1d9e63d05ed83"
+    },
+    {
+        "sha": "91ed8fb13a567ce459b3dc0c3ba206bc9796ac88",
+        "description": "nir: Add missing includes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0033ec1f69338d35aee7ef57196e0ddcf8db20e3",
+        "description": "venus: check against the Vulkan type rather than type index.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fbf4c6e43ff810625ff916d40c6b00429adaaf14",
+        "description": "venus: fix deqp tests failed on iub descriptor type",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "abae9d4831b5e983385d988ef95874e449887cc1"
+    },
+    {
+        "sha": "12f26b5e6d57a1fd03c1f1fb0ab8ccae657026ab",
+        "description": "radv: fix guardband if the polygon mode is points or lines",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "12b0f7ac19a781b9fb96282170c893736fe9e70d",
+        "description": "tu: Destroy disk_cache during tu_physical_device_finish",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f7d414b3e3c57d11547b55704c0ffecddccd9c8d",
+        "description": "mesa: Add missing dep on generated marshal header in the tests build.",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "381e0b43d617226e6ab0e4a2b2fef092c8d0a0a5"
+    },
+    {
+        "sha": "1c3671d2ba3734d483d28c6c79d91fdcb72f005d",
+        "description": "ir3: Disallow `noperspective` texture preloads",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5b8917bb9110e631c44f60e32bf6efa70d12adf8",
+        "description": "ir3: Propagate `coord_offset` result from `alu` src insts",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "83b8687264d26905948d143a42001a1bf3d31b2a",
+        "description": "turnip: Initialize *memory on 0-sized alloc early exit.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7809f76fe8a47ba80804897906a82f2157a30781",
+        "description": "intel/compiler/mesh: align payload size to the size of vec4",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ffefa386fda5aec8f66b4499d93b41a846a0b86c",
+        "description": "nir/lower_task_shader: fix task payload corruption when shared memory workaround is enabled",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8aff8d3dd42ecc399f1d7d23ddd641e7e3fce777"
+    },
+    {
+        "sha": "bd30adf89d3b66acca604c10e6208e56dbb8257d",
+        "description": "aco: apply NUW to additions for scratch access",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "381de3c809fce5427308c696bbd313360194eff4",
+        "description": "aco: more carefully apply constant offsets into scratch accesses",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0e783d687a3e13284eeae4081f16ee22033ff89b"
+    },
+    {
+        "sha": "fae8c75ad0bb707cf1ae780838b9874518642239",
+        "description": "radv/rt: set additions for scratch access as NUW",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9b7217d12e955fe9819cb67b33d8d715b701d9d7",
+        "description": "nir/range_analysis: unsigned upper bound analysis for b2i",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ccbb4648cba7c614be06fca6e194ccf5156fd19f",
+        "description": "ci/freedreno: temporarily disable godot-trive on zink+freedreno",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "b75b9d6324e0f3a31e72bd501034cf9c2a6c43af",
         "description": "ac/llvm: set invariant.load on image loads with ACCESS_CAN_REORDER",
         "nominated": false,
