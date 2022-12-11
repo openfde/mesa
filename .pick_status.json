@@ -1,5 +1,914 @@
 [
     {
+        "sha": "110d550941fd26f5e9ae450521a177d5be20a445",
+        "description": "zink: Don't set dynamic color attachment state for 0 attachments.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "efa4e9568b28266a7b1bb1dd6bb6d8d0e593c6f3",
+        "description": "radv: Use correct watermark for early loop exit.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f0d6a1a68548cb778da41e14fd92afc2d2fdcdb7",
+        "description": "radv: Rename stack_base to stack_low_watermark.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b0a6e0e17416310e3ac2635ede5e7757cf10b971",
+        "description": "Revert \"r600/sfn: Make use of variable length DOT\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "fcafe1ffc85573b6a0df2d64a438f1bac2bae3a2"
+    },
+    {
+        "sha": "c9b13a93385b15ecf0dc70e3da3d6fa449078766",
+        "description": "cso: remove cso_draw_vbo from all draws, call the driver or u_vbuf directly",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "85f01982a08a2d92a851b40db6aa0a1f852447cb",
+        "description": "cso: add a base class cso_context_base holding pipe_context*",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "37e89b41f1fdd2ef281fca39412222f25bf340af",
+        "description": "cso: unify cso_draw_vbo and cso_multi_draw",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8b4201d6bd7cc1a550db233533f8945bf43445d9",
+        "description": "gallium/u_vbuf: change u_vbuf_draw_vbo to accept pipe_context as first param",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4a92492a8a016114b6b4ed9833dddbc58a485f5d",
+        "description": "gallium: add the u_vbuf pointer into pipe_context",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a9934a9f649d397384db8fc6eb268663ea44b9de",
+        "description": "asahi: Implement occlusion queries",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4dabbb761b4c3fd4a2751df233fdca16fa27d26e",
+        "description": "asahi: Move query functions to agx_query.c",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7a5f88cb38c102f5a8cbd76b12399eb48e56e519",
+        "description": "asahi: Don't upload samplers for clears/stores",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d2f27d282f2ece300ae1703a83a1d2af53cccf3a",
+        "description": "asahi: Avoid reloads with staging blits",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dc4cf64a7687d64c1dc8fee18a9ef8f6ab906ce8",
+        "description": "asahi: Don't reload uninitialized surfaces",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "949a760c9f5a33344b95dd591f0ab4d8a03832bc",
+        "description": "asahi: Fix Z32S8 harder",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0c2500168d01439e7692a61616e3c75becb1736d",
+        "description": "asahi: Don't shadow idle resources",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c9144eff48830cef310ee424a70186599bb36e80",
+        "description": "asahi: Model alignment of occlusion query indices",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3a318e4265a801f444479414461b75658096cd21",
+        "description": "asahi: Identify some more fields used with layered",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c3eb81fd169ceed36f56abe46b8d09ad35eb9fd1",
+        "description": "asahi: Identify XML for anisotropic filtering",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7f247743a3c3fd2c9d25171f3fd6f49e677f437e",
+        "description": "asahi: Check-box implement rasterizer discard",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d2a2d1997ec28094de506b7766b03f33d6bce49c",
+        "description": "asahi: Wire in 1D (array) textures",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5612d2cbeb96e5985b0ca37903d9f4d3929539d8",
+        "description": "asahi: Dirty track VS/FS key updates",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "37feaf9c0c59a96e540eb8ee30d20d84e37f1e0a",
+        "description": "asahi: Separate VS/FS shader keys",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "720ff76de4287bd09860a77b4634bad4e89d3ad4",
+        "description": "asahi: Implement invalidate_resource",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "28b652af801d5d04c60aa3c481a3d11d4c2a686f",
+        "description": "asahi: Track batch masks on ZS/blend CSO",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "33b18768575613638da4a6f6e0f7de5171acb83c",
+        "description": "asahi: Dirty track blend state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "29e6c00e3c7f06a678a941e887817a008610e5af",
+        "description": "asahi: Enable dirty tracking",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b28fe26d7c613e7adc7d27515c4945e1f4060b9e",
+        "description": "ail: Save level_offsets_compressed_B",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3895545b834bdd8b08f9ed99722770da83351e0e",
+        "description": "panfrost: implement clear_depth_stencil",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b19a14a09473d71537128ebbaf658592172d072c",
+        "description": "nine: enable on panfrost",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "be841f0e7898d85c6f98aa212d5bf03509ed117d",
+        "description": "panfrost: implement clear_render_target",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8560c7613d4e87bbfec2b590efcd7a955c675486",
+        "description": "panfrost: Handle resources without depth in batch_to_fb_info",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d76d791565a720ec2c86f07c4f2690676a3c41c8",
+        "description": "panfrost: Implement GL_EXT_clip_control",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a099d6ae4d133fdef4a81fc2fbcfb8c7b9b5a440",
+        "description": "intel: add devinfo->has_64bit_float_via_math_pipe",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "eac00f4ec771ee6931f00168429f27579025e558",
+        "description": "intel/compiler: fix intel_swsb_decode for newer platforms",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "295c5f59e04b7cce2b78f67698525734faf62b8f",
+        "description": "intel/compiler: export brw_num_sources_from_inst",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "df50add27ee24b83d6d59348ccf0d6a3b5dad11b",
+        "description": "intel/compiler: avoid 64bit SEL_EXEC on MTL",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "951855c3492062035ab0bcff683b549b8247104a",
+        "description": "intel/compiler: avoid (RegDist, SBID) on DF instructions on MTL",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "16b9f87104be16e4726f42970bd13655c7e3c857",
+        "description": "intel/compiler: on MTL, DF instructions run in the math pipe",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "051887fbf3f07c49fb834ca3c1e5aa052ee4b18b",
+        "description": "intel/fs: Make the result of is_unordered() dependent on devinfo.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d608706875996b05df48b0e35ee0456f0f2ae8cf",
+        "description": "Revert \"anv: compile anv_acceleration_structure.c\"",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "74d0be27ae9eb666df948874a20a3b4464df7db1"
+    },
+    {
+        "sha": "d217883c5c33655254b54f32dcac9de046385020",
+        "description": "freedreno/a6xx: fix blend all_mrt_write_mask",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "0132c22de75c2c0794cf6d4eb69392847cbeb00d"
+    },
+    {
+        "sha": "bec68a85a2dee6e2031c1eb4b0cc7df007f02d74",
+        "description": "iris: Improve direct CPU map heuristics",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "eafaac2b1e3c5fa2c347488c2e5c94f895392b81",
+        "description": "iris: Only copy existing data into staging images with PIPE_MAP_READ",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "50614d39fe778ae2d153487f59b48abf54103d94",
+        "description": "iris: Return idle status from iris_invalidate_buffer, skip busy checks",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f112add5544ca545656b96e82a78b7fd06c43bcc",
+        "description": "iris: Don't replace backing storage for exported buffers.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6954a8ddbe9b512fa21789ee7ed9e67120d34929",
+        "description": "iris: Promote DISCARD_RANGE to DISCARD_WHOLE_RESOURCE where possible",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "465eb092ede759f873bb34e54b11721296be4c5a",
+        "description": "iris: Use persistent mappings for pinned memory (userptr)",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b82d545442538d91f46d7b7d384c10c15d12cbb7",
+        "description": "iris: Delete map->dest_had_defined_contents",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "907fbf22ddfaf6c8ec4e56f2848a17d5313d64cc",
+        "description": "nir/gather_info: use nir_ssa_scalar_resolved",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "085828ea4dc029a4850fa64c47335f393b5c1c60",
+        "description": "vtn: add mesh output and task_payload to vtn_mode_is_cross_invocation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e1f51003111b9fc9f06c948191c545164cfc86be",
+        "description": "nir: add task_payload and shader_out to nir_var_vec_indexable_modes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a89755d179254d1c9be3f935f44ba5efece90cc1",
+        "description": "radv: fix task payload lowering when shared_memory_explicit_layout=true",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e4060752e24bb4fae95ee3e8a361d5f839791165",
+        "description": "radv: fix mesh shaders with null winsys",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f381187b8f0e748016dce844656f5a4ad8c2f933",
+        "description": "panvk: Delete panvk_CmdSetDeviceMask, panvk_GetDeviceGroupPeerMemoryFeatures",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "aa76b70751ae58e3f7617655e5203460bb615c56",
+        "description": "hasvk: Delete VK_KHR_device_group provided entrypoints",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "43f9c66224f05911b5580372342f67b9c022b7ec",
+        "description": "anv: Delete VK_KHR_device_group provided entrypoints",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "159cf9122ec29674d22821d4058abf5ba241116d",
+        "description": "tu: Delete VK_KHR_device_group provided entrypoints",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6b1e2e9eb69e3a3fbafcd662345b666d586e28f3",
+        "description": "v3dv: Delete VK_KHR_device_group provided entrypoints",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "64d7385e61e7f2da5159ec4fbc3f7047503f01ae",
+        "description": "radv: Delete VK_KHR_device_group provided entrypoints",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "83400af043a8e797e64473dd33702e91866da753",
+        "description": "vulkan/runtime: Add VK_KHR_device_group provided entrypoints",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2d4a36ce64791971c2abe0280778a7d7555bb273",
+        "description": "gallium: add new variable for video frame statistics",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "2d1bd619dfd7bf826a6300030718408212b0b68a"
+    },
+    {
+        "sha": "c872e339a158056aca29c4b3e1f62c435aa81948",
+        "description": "radv: remove some unnecessary 64-bit IO handling",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6a5b615ab1feef121887121199dfef72dfee6d26",
+        "description": "radv: fix streamout with different streams in the same varying slot",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "20e670d0603a9f06e64c691a19aba1ec5361a31c",
+        "description": "aco/ra: don't swap create_vector operand with definition blocker for SGPRs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a05dd58309caf7e3857eb7f02084d8c9667c9efc",
+        "description": "aco/ra: don't swap p_create_vector operand with definition blocker for scc",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9476986e6f6fe49ef8bc511f4ebeca4232263888"
+    },
+    {
+        "sha": "4dff3ff005b47befd3e4a903b08d5b4bdbef6ae3",
+        "description": "nir/opt_algebraic: Optimize open coded bfm.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a73e86e0a5eb58e2f25f7b7419a78c122cc5ab1a",
+        "description": "frontends/va: fix gst videotestsrc h264 enc fail issue.",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ee10a5f7a694ae642fdbc29239650ef4c8c84c7b",
+        "description": "frontend/osmesa: inherit pipe_frontend_drawable instead of allocating separately",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5be128f67dade50533a5fa3ac374e61b203a8442",
+        "description": "frontend/hgl: inherit pipe_frontend_drawable instead of allocating separately",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3ba24ad153e8f9c4cbf293dae0f54a77801cc994",
+        "description": "gallium: rename st_framebuffer_iface -> pipe_frontend_drawable, etc.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "279dfeff1d2e4a0de490d964556ac5f3179119a6",
+        "description": "gallium: remove pipe_frontend_screen::destroy callback, call it directly",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ab7a86a0ee8c41765ad42ff9485edf123dcd3b85",
+        "description": "gallium: clean up comments in api.h, cosmetic changes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e7a1cce4eec741f8d766cb2af15491d5c99c2509",
+        "description": "gallium: remove st_framebuffer_iface::st_manager_private",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4f376f323964c5b5abcfd8386dd086a7d0aec4fe",
+        "description": "frontend/glx: inherit st_framebuffer_iface instead of allocating separately",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e51cb3ae20b1307baca0c8ac0724aa03d32ebcdb",
+        "description": "gallium: remove unused ST_CONTEXT_ERROR_*",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ab281457aa40b6a7d7670100e0d0b9f49154a347",
+        "description": "gallium: rename st_manager_private -> st_screen",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8543dcb275e7f4d849951e506c63138713730f0e",
+        "description": "gallium: remove st_profile_type in favor of gl_api, move out st_context_attribs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "81020faf20e30878dc23ee1883ae66a44f317145",
+        "description": "gallium: remove unnecessary ST_PROFILE_*_MASK definitions",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9fdb0ce755d5f84df09b729fa8da2518ea2f31d0",
+        "description": "gallium: use PIPE_CONTEXT_* flags instead of ST_CONTEXT_FLAG_*",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0122a67c81417c3f1041a658b5b2507d3ceb3a3b",
+        "description": "gallium: move st function declarations from api.h into st_context.h",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "be8f1d685e73be2692b965567dce559799e6745b",
+        "description": "gallium: remove enum st_texture_type",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "59c9e62f482ff2872d3fa0a8768efbe7fc0b6d3d",
+        "description": "st/mesa: remove st_context callbacks for dri/glx/wgl frontends",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "263dc7b6056e660b9f1b69194538428b53192c1f",
+        "description": "gallium: remove st_context_iface, use st_context directly",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c61aa8fa816cc06771053ecd72864d5381d2f624",
+        "description": "gallium/pp: don't use st_context_iface, use an explicit callback",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fdec3529030cacea8ba82aba0ed8db703813549e",
+        "description": "gallium/hud: don't use st_context_iface, use an explicit callback",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "64ee8d2430a769134f88af92873b06b44f78e0c6",
+        "description": "gallium: rename st_context_iface::st_manager_private to frontend_context",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ec564cf0435445dbda96f487a8ecd5b58a40ea4e",
+        "description": "gallium: remove duplicated st_context_iface::st_context_private",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cf2d71ec068bb706d724ad1a0f459e3a5a303f2a",
+        "description": "gallium: rename st_manager to pipe_frontend_screen (think dri_screen)",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "597b2648d2dbe4dff21c7eeb95729c02d8e5e01d",
+        "description": "zink: do not leave needless shader temps around",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "85964945e7c422d4a679364f4dd3a4e7c2fe1637"
+    },
+    {
+        "sha": "8c2448d4e67a19647afc7785fb31be6f7a6f094c",
+        "description": "intel/compiler: Delete sampler key handling for planar format stuff",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "88918baf5ca3a1e78e14ce4f7ade9048b4f035aa",
+        "description": "intel/compiler: Delete key->msaa_16",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5d2a290cc7b5f850674cc03f9a6a7526b6b87d20",
+        "description": "intel/blorp: Set key->msaa_16 unconditionally on Gfx9+",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "584e18863e6f0b408a7275cd427ca7e678abe836",
+        "description": "intel: Drop compressed_multisample_layout_mask from the compiler keys",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5c62f526a4bc95f87eddde186fc30790d732bf3f",
+        "description": "intel/common: use format struct in aux mapping",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8ad954967779d3ecc4cf66790e43229b5ac05e0c",
+        "description": "intel/common: initialize format of aux mapping on GFX12",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cf3ee73f8f6332016d88cbade50f57068eb0f35b",
+        "description": "intel/common: fix style of some comments in intel_aux_map.h",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d0520430aa8f5db68e49c74613b6b2c0e0716d2c",
+        "description": "intel/common: Add a new struct to describe AUX mapping format",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6b3740f359589fe2f450b37bb71151a9c5dcb8eb",
+        "description": "intel/common: Add an enum of formats of AUX mapping",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "90c86fe63e94df7719081f86ebee4851ab3fd341",
+        "description": "intel: add MTL performance metrics",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d4bcfed42234f9263c99936c87772c6e7f22739e",
+        "description": "hasvk: Allow aliasing with modifiers for WSI images",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "586ba9c2234cadba8f74eae30f7bca1601970512",
         "description": "r600/sfn: implement GDS op channel mask evaluation",
         "nominated": false,
