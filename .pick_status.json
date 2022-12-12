@@ -1,5 +1,50 @@
 [
     {
+        "sha": "610639682533783796fe32bdcb2b4d3375fae56f",
+        "description": "intel/nir/rt: fixup primitive id",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "046571479028aeb5577344a91f0c4d565415f4bc"
+    },
+    {
+        "sha": "13f39da71a69026445fc5455d749858aa7ad94dc",
+        "description": "radv: fix hashing descriptor set layout",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "19f8d338761d124b24eac2d4703dc1346c8b4f9f"
+    },
+    {
+        "sha": "e20564cfdb946a3e7ccd8dec36520f3dff3d32e5",
+        "description": "nir/lower_shader_calls: Remove phis after dead control flow",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a54c2c828941ef1325fc1a3b49eba32f3c964f0d",
+        "description": "nir: Do not consider phis with incompatible dests equal",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "6bdce55c44a45fc8ec8426996572c18ecf88bd64"
+    },
+    {
+        "sha": "c9c44d63da418267b1ac6ac733fb40704e785e4b",
+        "description": "docs/release-calendar: add 22.3.x dates",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "110d550941fd26f5e9ae450521a177d5be20a445",
         "description": "zink: Don't set dynamic color attachment state for 0 attachments.",
         "nominated": false,
