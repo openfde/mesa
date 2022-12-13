@@ -1,5 +1,572 @@
 [
     {
+        "sha": "f6929e7c3bc907ecc8284f1e6220bcd2a3351b3b",
+        "description": "intel: fix the wrong function name",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a0991c7c794da39bf1a4b5fb5484b77afde200cc",
+        "description": "anv: fixup descriptor copies",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "03e1e19246da43f87b50a2ced38263a884b15b4c"
+    },
+    {
+        "sha": "79cb465526eef5c6ae6ef69cadaa4398b36cc864",
+        "description": "r600: Lower all bitfield ops on pre-EG",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "4dff3ff005b47befd3e4a903b08d5b4bdbef6ae3"
+    },
+    {
+        "sha": "357e5fac9953b26eedc8819ab528b981be6e1b69",
+        "description": "r600/sfn: Use variable length DOT on Evergreen and Cayman",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "573448f93cbbeeae22295e7f943c7120598780d4",
+        "description": "r600/sfn: prepare alu split for use of variable length dot",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "edabd5cd8425f17dc71c2170ee0f1aa16eecbbec",
+        "description": "r600/sfn: check used channels when evaluating allowed mask",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8c30cf444346c2efe45834276a60d316b759e9f4",
+        "description": "ci/test-vk: uprev vkd3d",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d2ac1b18df90da1e3e36750774fab9b7d62086bb",
+        "description": "ac/nir: add ac_nir_lower_legacy_gs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0e52a4faf061dac024c0a673b944cbbb20d6706c",
+        "description": "ac/nir: move ngg_gs_shader_query to a common function",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9a6416b3746cb90b544518643677a4b53666b1dc",
+        "description": "nir,ac/llvm,radv: add stream id index to nir_load_ring_gsvs_amd",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0ea589ec69ff2872bef738d2a14890531c7f90f2",
+        "description": "ac/llvm,radv,radeonsi: pass instruction to intrinsic_load abi",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "796a150196acf1d481a92147f6a3c986c535993f",
+        "description": "nir: add nir_load_ring_gs2vs_offset_amd",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "603e68ba36e63d75d69deb46e2abd82ba349d959",
+        "description": "ac/nir,radeonsi: replace llvm ngg gs invocation query with nir",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fd240f759f203a27c6bb47c8a9eb29be8675345d",
+        "description": "nir,radv,radeonsi: add nir_atomic_add_gs_invocation_count_amd",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "17c18a492a3ce2a9467198dc8cc2d9c84afe8a06",
+        "description": "freedreno/registers: Add some docs for PM4 events.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "378f83917c01430a24a55699182653a6fab165fc",
+        "description": "doc/freedreno: Add a bunch of docs of the hardware and drivers.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e284e6ad3c4292a0b46a432e6d898754e91fc60c",
+        "description": "freedreno: Clarify that CACHE_FLUSH is pre-5xx.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5d37f6b16c83e04568a68a9acd3adc0c8657dcc7",
+        "description": "ci/docs: Always expose the built docs.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7642f3b99c8b17c7cfa1f140c65ce82e7dbcea2b",
+        "description": "intel: Fix crashes for importing drm buffer",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "68b546ec3daacc93513b31583cbe6eb7f8fdc25c",
+        "description": "hasvk: pipelineStageCreationFeedbackCount is allowed to be 0",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "6601e5d6fc68cd9f8305508c650289170fef71ff"
+    },
+    {
+        "sha": "8560ce28c22f82895dd95c185b59dcaaab249c6a",
+        "description": "vdpau: allow building vdpau st with virgl only",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "6b5aecb19558200fd39fda46db08456ba7acc180"
+    },
+    {
+        "sha": "9e9b8dc7f8a25c1d0ff7e8f93ea7603b08f62d36",
+        "description": "glsl: fix function inlining for images",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "8d10a6835f32ec677759f9d37e08dcc95aaab17a"
+    },
+    {
+        "sha": "92959061a92b2d82ec61fe757602cb22cb630c3d",
+        "description": "radv: Improved export conflict bug workaround.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3a294ff01fb9d1d8b4f984a364ed7ef469624c49",
+        "description": "mesa: move the _mesa_set_varying_vp_inputs call to where the state changes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fe1d53355324a42ca6c69bd565131255aec0a56c",
+        "description": "mesa: move _DrawVAOEnabledAttribs determination into st_update_array",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "01ef28f1aff66a9239e22974e1d65708cb6a4c67",
+        "description": "mesa: inline _mesa_draw_array_bits & _mesa_draw_current_bits",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a2cda5ba09e994d453479625e5d97fb0372232ff",
+        "description": "mesa: don't AND with VERT_BIT_ALL because it's ~0u",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b1b4f1e1856adc48600f8954558185937cf4d347",
+        "description": "mesa: simplify VBO state flagging in _mesa_update_vao_state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b57d56d754242694467c715f1bfb23fc278d1199",
+        "description": "mesa: remove VAO::NewVertexBuffers/Elements, set the dirty flags directly",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0fbd82bdc45c48aa8cbc08d8bbf1319e66217d45",
+        "description": "mesa: move calling _mesa_update_vao_derived_arrays into st_update_array",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "76a214f390e6136e1bbce67f1467e2874e16ac51",
+        "description": "mesa: remove the NewVAO flag, set directly what we need to set",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ee308fb9ae5a0c8dbd6f6c9e53b09ff871ab3bdb",
+        "description": "st/mesa: move st_atom.c contents into st_context.c",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ae2b9112174985af2de213c928afc4b7fde630c1",
+        "description": "st/mesa: inline st_validate_state and remove redundant checking in callers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "eb97f624c73200a7fd844ce765fb74b5ad6da173",
+        "description": "st/mesa: remove the switch from st_validate_state by passing state mask directly",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ae8147dd5a99b16d8bad4b724c0da357d9d09b5f",
+        "description": "st/mesa: remove st_context::dirty, use gl_context::NewDirtyState instead",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "33c3e429fe381d4e2df299ff75d81ef6b44a8f6e",
+        "description": "mesa: remove per_vertex_edgeflags parameter from DrawGalliumVertexState",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a5851ca8b1a68ad5bdb05c4b89d901ac27b78327",
+        "description": "mesa: completely rewrite the edge flag state update logic",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b6e800af7d54c3fb838f1f872fb8be1bef7ba1fa",
+        "description": "mesa: don't call _mesa_set_varying_vp_inputs in set_vertex_processing_mode",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c2557a5652af4c20b5c5df1f22f34c3cd1e259b6",
+        "description": "mesa: don't call _mesa_update_vao_derived_arrays for dynamic VAOs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dcad210d12dfdb6503e6055d93972175425f6479",
+        "description": "mesa: merge 2 switch statements into one in _mesa_get_derived_vao_masks",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d5187dbc077281c60405f5090f88dd0d315ee4e4",
+        "description": "mesa: remove derived _EffEnabled* fields and compute them at their only use",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "888463b17344e1449f2fc5923a3331c43646f987",
+        "description": "mesa: merge _mesa_draw_(user_array,nonzero_divisor)_bits into one helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e6375f95bbee8d4ab50955a385b45b73ccb0a723",
+        "description": "mesa: remove unused inline functions from arrayobj.h",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "50a367f8f700adf89a685db25f2e0ce874526f8f",
+        "description": "mesa: keep the current VAO also set as _DrawVAO",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b205d7663bd04c51a7b417688b9286ec86ea611d",
+        "description": "mesa: split _mesa_set_draw_vao into set and update functions",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "568fa71ef8d825b735fdbf6747ada3d7cfe95eff",
+        "description": "radv: Handle NULL miss shaders",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "85580faa4b0b654600a137e337211ce3efff43fb"
+    },
+    {
+        "sha": "276236ed6d8984ab45e53e970d3ed9c9ddefc133",
+        "description": "radv: Change shaderGroupBaseAlignment to RADV_RT_HANDLE_SIZE",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5751ae45ec97cb4dd3ade8bea385317d00ba50cf",
+        "description": "radv: Force non uniform texture sampling with NV Remix",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9492b84a680c23ff2ef5a2abd855940b6f69e9d9",
+        "description": "radv: Add a driconf option to force non uniform texture sampling",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7a994d92ff61acdd5177d4b786a7382df4ddd9e3",
+        "description": "spirv: Add a debug option to force non uniform texture sampling",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cdd68cbafdb8abdfbaba15215bb8486759ece28c",
+        "description": "radv/rt: Hash the pipeline key",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "48ae92ceea83c84d39f3fbb2d9b9ff4a7cef947e",
+        "description": "radv/rt: Propagate radv_pipeline_key",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7b5ac0ae2a6ce71fe8f2bfc887fef27477044ce6",
+        "description": "radv/rt: Work around incorrect NOT_DEFERRED handling in Portal RTX",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cb3872f2cdce8476dbb8f361a7f95f005c657c3d",
+        "description": "tu: Implement VK_EXT_descriptor_buffer",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b28899a26129f075ab65aaa72df8e9cc385809b5",
+        "description": "vk/descriptor_set_layout: Add optional destructor",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "56e435954200bbf085b3aed8984c41d30201c0e7",
+        "description": "tu: Fall back to ldg for variable-size inline uniform blocks",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f4c9e9329cf2bcfc73d9b7a1167ba6864a79caf4",
+        "description": "ir3/a6xx: Fix immediate offset stg/ldg path",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "733264bd7ca33a9ab64244fc53044c1a8bca98f1",
+        "description": "microsoft/compiler: Fix codegen when a loop ends in a jump",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "16c4c1a549ff07960c7452456ab32472f9563ab1",
+        "description": "microsoft/compiler: Handle holes in driver_location when adding sysvals",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1071d33c3721819cb77ca850766d2e68f52f6e10",
+        "description": "ci: Bump virglrenderer version",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0d34df0e6cd3e8bbf3896dd21f4a7e43dc73680e",
+        "description": "ir3/freedreno: Find regs for FS inputs when printing info",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c147a356446aa7e96abc5e45d70820a2f84b4781",
+        "description": "radv: fix assertion on gpu hang detection",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e9efd05af530988fe434fca13bd16b00bd41682b",
+        "description": "intel/compiler: Remove leftover declarations of old NIR passes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "610639682533783796fe32bdcb2b4d3375fae56f",
         "description": "intel/nir/rt: fixup primitive id",
         "nominated": true,
