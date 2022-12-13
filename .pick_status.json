@@ -1,5 +1,248 @@
 [
     {
+        "sha": "e2dc32d755b15697765719acec1d23f12f9c938c",
+        "description": "anv: move functions around to plan for generated draws",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "971e07361a61b3069a5ad239d86c5719313e7503",
+        "description": "genxml: add gen12/12.5 CS prefetch disable bits",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4a3faab51241ea7ec12be5f00fe44d500c5b4159",
+        "description": "anv: move draw command helpers to their own file",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "624ac557212dfac1247f88605469c638045d5b7c",
+        "description": "anv: move total_batch_size to anv_batch",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8d21e29be34ec40fdb5e1485722615f73b2d43b7",
+        "description": "anv: add helper to get current address of a batch",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c9272e80b1ab539afd6bf7a2f500cb4d9c68e294",
+        "description": "anv: add a utility function to ensure command buffer space",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "21e32e1f8dcfb9c01f604ec962d5c7bde72827f3",
+        "description": "anv: document utrace field",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c70ef757e6345652d4946fcc91b4816e56d86b43",
+        "description": "anv: Use extended parameters on Gen11+",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2680e32f71404cff80bdaf834072e06fcf6dcd04",
+        "description": "intel/blorp: Emit a dummy 3DSTATE_VF_SGVS_2",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9859413bf4ad28eec70c3f39c23d3d1ba4a14102",
+        "description": "intel/genxml: Add 3DPRIMITIVE_EXTENDED opcodes on Gen11+",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "781a16382d5b8dc3f8f850a18d7b0a022cfa11a7",
+        "description": "intel/genxml: Make some fields Booleans",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "75d20a18f5a5a11129855091cc620cf417dfc1c3",
+        "description": "anv/utrace: only record the emitted pipecontrol flags",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5fd0d27280da8e7834a19fdb51411b2c98a72a4f",
+        "description": "intel/ds: trace a couple of more pipe control flags",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "eea416d0c9c1eb1144ac77a9098abc59b374fa52",
+        "description": "cso: fix a regression from draw_vbo rework",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "c9b13a93385b15ecf0dc70e3da3d6fa449078766"
+    },
+    {
+        "sha": "d51fc12af9dd0189be7b3eae0c96a6336eeaca18",
+        "description": "panfrost: fix sampler_count and unbind samplers in bind_sampler_states",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a921486e2a6ca5fc873a6e2f9c61fb5bef4cf3d9",
+        "description": "anv: disable Wa_1806565034 when robustImageAccess is enabled",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "94bb4a13fa294204e32b88a098c2d49a0c82a5c3",
+        "description": "intel/fs: make Wa_1806565034 conditional to non robust access",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "89a550a37b0bb32bc3dfd92062f9fe6eb05c11db",
+        "description": "isl: make Wa_1806565034 conditional to non robust access",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6a3179c5a97f9a45006af2781d0af4b437784515",
+        "description": "frontends/va: fix crash during grayscale rendering",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7ad4a5079e8ad0b9f3ab7924cc3dfec5f74ea88d",
+        "description": "radeonsi/vcn: fix regression in yuv422 jpeg decode",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "12acee17fad5e939a4fa6ac9ce3bd4753fd0326c"
+    },
+    {
+        "sha": "b4f940913d386bad0e25a1e224d0f39631124593",
+        "description": "radv: do not remove the PointSize built-in for polygon mode as points",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "75375233f6e75a02e9e7498be922f337523e4a9f",
+        "description": "intel/compiler/mesh: extract emit_urb_direct_vec4_write",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3a60112ce5e7daaf649b3fe33a3f09b9497a276a",
+        "description": "intel/compiler: optimize away local_inv_index and local_inv_id if workgroup size is 1",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "85b1c89e206763acc49822c5c53097bf894ec7d2",
+        "description": "intel/compiler: split lower_cs_intrinsics_convert_block",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bb93f1bda1952f07b177916e9290654f26f4a557",
+        "description": "intel/compiler/mesh: extract shared code for offset adjustment",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5ffdd47a2660a8bd4fcd9526f92998da9a564bd6",
+        "description": "anv: simplify EXT_mesh_shader lowering",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7fbd1dfb18beedadd62eed3897f23ff2179a7fcf",
+        "description": "anv,intel/compiler/mesh: drop lowering of gl_Primitive*IndicesEXT",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "f6929e7c3bc907ecc8284f1e6220bcd2a3351b3b",
         "description": "intel: fix the wrong function name",
         "nominated": false,
