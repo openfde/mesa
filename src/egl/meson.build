@@ -145,7 +145,7 @@ endif
 
 if not with_glvnd
   egl_lib_name = 'EGL' + get_option('egl-lib-suffix')
-  egl_lib_version = '1.0.0'
+  egl_lib_version = '1.2.0'
 else
   egl_lib_name = 'EGL_mesa'
   egl_lib_version = '0.0.0'
