@@ -114,7 +114,7 @@ endif
 
 if not with_glvnd
   gl_lib_name = 'GL'
-  gl_lib_version = '1.2.0'
+  gl_lib_version = '1.8.0'
 else
   gl_lib_name = 'GLX_mesa'
   gl_lib_version = '0.0.0'
